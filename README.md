@@ -38,7 +38,7 @@ L’onglet **Général** regroupe les paramètres de mesure et du widget. L’on
 
 ![Apparence du graphique](docs/settings-graph.png)
 
-**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. La bordure de fenêtre reste visible à zéro ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
+**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. À zéro, le cadre reste visible s’il est activé ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
 
 Le graphique affiche une ligne horizontale en tirets au niveau du **maximum observé sur la période visible**, avec la valeur juste au-dessus. La flèche et la couleur indiquent si ce pic vient de la réception (↓) ou de l’envoi (↑) ; les deux débits sont comparés, sans les additionner. Le maximum baisse lorsque les anciens pics sortent de la période. Il utilise les mêmes unités que le widget et reste visible hors survol. **Graphique → Maximum de la période** permet de masquer ou d’afficher ce repère. Si le maximum dépasse une échelle fixe, la ligne reste au plafond et la valeur exacte porte la mention « hors échelle ».
 
@@ -71,6 +71,14 @@ MiniDébit observe le trafic total de la carte, y compris les échanges locaux. 
 La **période affichée** règle la vitesse du défilement, indépendamment de l’**actualisation des mesures**. Avec 5 minutes, le graphique défile cinq fois plus lentement qu’avec une minute, tout en continuant de mesurer et d’afficher les débits toutes les 1 000 ms par défaut. Le réglage se trouve dans **Paramètres → Période affichée (min)**. Une période plus longue se remplit progressivement avec les nouvelles mesures ; le programme ne peut pas reconstituer des données déjà supprimées. Lors de la mise à jour, l’ancienne valeur de 60 secondes devient 5 minutes ; une autre période personnalisée et le délai de mesure sont conservés.
 
 Les points du graphique restent en mémoire et leur nombre est borné. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
+
+## Cadre de la fenêtre
+
+L’onglet **Cadre** permet d’afficher ou de masquer la bordure autour de toute la fenêtre, de choisir sa couleur, son épaisseur (**0,5 à 8 px**) et son style (**continu, pointillé ou tirets**). Par défaut, le cadre est continu, épais de 1 px, avec une couleur qui suit le thème clair ou sombre. L’épaisseur suit la mise à l’échelle Windows et réserve sa place autour du graphique et du bandeau des débits. Le cadre reste visible hors survol.
+
+![Paramètres du cadre](docs/settings-frame.png)
+
+L’aperçu réagit aux réglages ; **Enregistrer** applique et mémorise le cadre, **Annuler** conserve le cadre actuel. **Rétablir le cadre par défaut** ne change que ces paramètres, après enregistrement.
 
 ## Historique SQLite
 
@@ -119,6 +127,8 @@ Une capture de la fenêtre des paramètres peut être produite avec `--capture-s
 L’onglet Graphique peut être capturé avec `--capture-graph-settings chemin.png`.
 L’onglet Débits peut être capturé avec `--capture-rate-settings chemin.png`.
 L’onglet Historique peut être capturé avec `--capture-history-settings chemin.png`.
+L’onglet Cadre peut être capturé avec `--capture-frame-settings chemin.png`.
+Ajouter `--diagnostic-settings chemin.json` à une capture ou un diagnostic pour vérifier des réglages personnalisés dans un fichier distinct, sans écrire les paramètres utilisateur.
 Les diagnostics désactivent l’historique par défaut ; ajouter `--history-db chemin.sqlite` pour tester les écritures dans une base distincte des données utilisateur. `--long-benchmark` prolonge le diagnostic à 72 secondes, dont environ 70 secondes mesurées après démarrage.
 Ajouter `--compact` à un diagnostic pour capturer le widget ou l’onglet Débits en mode compact sans modifier les paramètres utilisateur.
 Ajouter `--capture-hover chemin.png` au diagnostic pour capturer aussi le bandeau affiché au survol, sur le même relevé de trafic.

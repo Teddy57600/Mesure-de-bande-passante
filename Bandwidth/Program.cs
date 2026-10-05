@@ -15,17 +15,20 @@ internal static class Program
         var captureGraphSettings = Argument(args, "--capture-graph-settings");
         var captureRateSettings = Argument(args, "--capture-rate-settings");
         var captureHistorySettings = Argument(args, "--capture-history-settings");
+        var captureFrameSettings = Argument(args, "--capture-frame-settings");
+        var diagnosticSettings = Argument(args, "--diagnostic-settings");
         var historyPath = Argument(args, "--history-db");
         var report = Argument(args, "--smoke-report");
-        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null)
+        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null || captureFrameSettings is not null)
         {
-            var captureConfiguration = new Settings();
+            var captureConfiguration = diagnosticSettings is null ? new Settings() : Settings.Load(diagnosticSettings);
             captureConfiguration.Rates.Compact = args.Contains("--compact");
             using var dialog = new SettingsForm(captureConfiguration, SystemIcons.Application);
             if (captureGraphSettings is not null) dialog.SelectGraphTab();
             if (captureRateSettings is not null) dialog.SelectRatesTab();
             if (captureHistorySettings is not null) dialog.SelectHistoryTab();
-            var settingsCapturePath = captureHistorySettings ?? captureRateSettings ?? captureGraphSettings ?? captureSettings!;
+            if (captureFrameSettings is not null) dialog.SelectFrameTab();
+            var settingsCapturePath = captureFrameSettings ?? captureHistorySettings ?? captureRateSettings ?? captureGraphSettings ?? captureSettings!;
             using var close = new System.Windows.Forms.Timer { Interval = 1000 };
             close.Tick += (_, _) =>
             {
@@ -47,9 +50,10 @@ internal static class Program
             return 0;
         }
         bool diagnostic = capture is not null || captureHover is not null || report is not null;
-        var settings = diagnostic ? new Settings { AlwaysOnTop = false } : Settings.Load();
+        var settings = diagnostic ? diagnosticSettings is null ? new Settings() : Settings.Load(diagnosticSettings) : Settings.Load();
         if (diagnostic)
         {
+            settings.AlwaysOnTop = false;
             settings.Rates.Compact = args.Contains("--compact");
             settings.Storage.Enabled = historyPath is not null;
         }

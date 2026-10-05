@@ -176,8 +176,6 @@ public sealed class Widget : Form
         float w = LogicalWidth, h = LogicalHeight;
         using var back = new SolidBrush(Background);
         g.FillRectangle(back, 0, 0, w, h);
-        using var border = new Pen(Grid);
-        g.DrawRectangle(border, .5f, .5f, w - 1, h - 1);
         if (HeaderVisible)
         {
             using var accent = new SolidBrush(DownColor);
@@ -188,13 +186,14 @@ public sealed class Widget : Form
             DrawButton(g, 1, "−", w - 55);
             DrawButton(g, 2, "×", w - 29);
         }
-        float margin = settings.Graph.MarginPixels + 1; // Keep the window border even at zero margin.
+        float inset = settings.Frame.Inset;
+        float margin = settings.Graph.MarginPixels + inset;
         float rateHeight = RateRenderer.Measure(rateFont, labelFont, arrowFont, settings.Rates.Compact).Height;
         float headerHeight = HeaderVisible ? 62 : 0;
         // Preserve room for the graph in small widgets with large fonts and margins.
-        float verticalMargin = Math.Min(settings.Graph.MarginPixels, Math.Max(0, (h - headerHeight - rateHeight - 18) / 2));
-        float chartTop = headerHeight + 1 + verticalMargin;
-        var chart = new RectangleF(margin, chartTop, w - 2 * margin, Math.Max(1, h - chartTop - rateHeight - 1 - verticalMargin));
+        float verticalMargin = Math.Min(settings.Graph.MarginPixels, Math.Max(0, (h - headerHeight - rateHeight - 16 - 2 * inset) / 2));
+        float chartTop = headerHeight + inset + verticalMargin;
+        var chart = new RectangleF(margin, chartTop, w - 2 * margin, Math.Max(1, h - chartTop - rateHeight - inset - verticalMargin));
         if (HeaderVisible)
         {
             DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, 47, 160, 14));
@@ -204,11 +203,12 @@ public sealed class Widget : Form
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
         GraphRenderer.Maximum(g, chart, settings.Graph, settings.Dark, visiblePeak, scale, settings.Bits);
-        RateRenderer.Draw(g, new RectangleF(1, h - rateHeight - 1, w - 2, rateHeight), Units.Rate(current.Down, settings.Bits),
+        RateRenderer.Draw(g, new RectangleF(inset, h - rateHeight - inset, w - 2 * inset, rateHeight), Units.Rate(current.Down, settings.Bits),
             Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         using var grip = new Pen(Muted, 1);
         g.DrawLine(grip, w - 8, h - 4, w - 4, h - 8);
         g.DrawLine(grip, w - 12, h - 4, w - 4, h - 12);
+        FrameRenderer.Draw(g, new RectangleF(0, 0, w, h), settings.Frame, settings.Dark);
     }
 
     private static void DrawText(Graphics g, string value, Font font, Color color, RectangleF bounds, StringAlignment align = StringAlignment.Near)

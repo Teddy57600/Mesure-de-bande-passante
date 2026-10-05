@@ -7,6 +7,7 @@ public sealed class SettingsForm : Form
     internal void SelectGraphTab() => tabs.SelectedIndex = 1;
     internal void SelectRatesTab() => tabs.SelectedIndex = 2;
     internal void SelectHistoryTab() => tabs.SelectedIndex = 3;
+    internal void SelectFrameTab() => tabs.SelectedIndex = 4;
 
     public SettingsForm(Settings settings, Icon icon, Func<string>? storageStatus = null)
     {
@@ -30,7 +31,8 @@ public sealed class SettingsForm : Form
         var graph = new TabPage("Graphique") { BackColor = BackColor };
         var ratePage = new TabPage("Débits") { BackColor = BackColor };
         var storagePage = new TabPage("Historique") { BackColor = BackColor };
-        tabs.TabPages.AddRange([general, graph, ratePage, storagePage]);
+        var framePage = new TabPage("Cadre") { BackColor = BackColor };
+        tabs.TabPages.AddRange([general, graph, ratePage, storagePage, framePage]);
         Controls.Add(tabs);
         ComboBox Choice(params object[] values)
         {
@@ -135,6 +137,37 @@ public sealed class SettingsForm : Form
         var ratePreview = new RatePreview(ReadRates, ReadAppearance, () => theme.SelectedIndex == 0)
             { Location = new Point(12, 339), Size = new Size(476, 48) };
         ratePage.Controls.Add(ratePreview);
+        var frameTable = Table(framePage, 4, 40);
+        var frameEnabled = new CheckBox { Text = "Afficher le cadre", Checked = settings.Frame.Enabled, Dock = DockStyle.Fill };
+        var frameColor = new ColorField(settings.Frame.ColorHex, settings.Frame.Color(settings.Dark), true);
+        var frameWidth = Number(.5m, 8, (decimal)settings.Frame.WidthPixels, .5m); frameWidth.DecimalPlaces = 1;
+        var frameStyle = Choice("Continu", "Pointillé", "Tirets"); frameStyle.SelectedIndex = settings.Frame.Style;
+        Row(frameTable, 0, "Cadre de la fenêtre", frameEnabled);
+        Row(frameTable, 1, "Couleur du cadre", frameColor);
+        Row(frameTable, 2, "Épaisseur du cadre (px)", frameWidth);
+        Row(frameTable, 3, "Style du cadre", frameStyle);
+        FrameAppearance ReadFrame() => new() { Enabled = frameEnabled.Checked, ColorHex = frameColor.Value,
+            WidthPixels = (double)frameWidth.Value, Style = frameStyle.SelectedIndex };
+        framePage.Controls.Add(new Label { Location = new Point(12, 192), Size = new Size(476, 70), ForeColor = Color.FromArgb(94, 115, 141),
+            Text = "Le cadre entoure toute la fenêtre, même hors survol.\n« Auto (thème) » suit le thème clair ou sombre.\nL’épaisseur réserve sa place autour du graphique et des débits." });
+        framePage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 278), AutoSize = true });
+        var framePreview = new FramePreview(ReadFrame, ReadAppearance, ReadRates, () => theme.SelectedIndex == 0)
+            { Location = new Point(12, 307), Size = new Size(476, 160) };
+        framePage.Controls.Add(framePreview);
+        void RefreshFrame()
+        {
+            frameColor.UpdateAutomaticColor(new FrameAppearance().Color(theme.SelectedIndex == 0));
+            frameColor.Enabled = frameWidth.Enabled = frameStyle.Enabled = frameEnabled.Checked;
+            framePreview.Invalidate();
+        }
+        frameEnabled.CheckedChanged += (_, _) => RefreshFrame();
+        frameColor.Changed += (_, _) => RefreshFrame();
+        frameWidth.ValueChanged += (_, _) => RefreshFrame();
+        frameStyle.SelectedIndexChanged += (_, _) => RefreshFrame();
+        var resetFrame = new Button { Text = "Rétablir le cadre par défaut", Location = new Point(12, 482), Size = new Size(256, 28) };
+        framePage.Controls.Add(resetFrame);
+        resetFrame.Click += (_, _) => { frameEnabled.Checked = true; frameColor.Value = ""; frameWidth.Value = 1; frameStyle.SelectedIndex = 0; RefreshFrame(); };
+        RefreshFrame();
         void RefreshRates()
         {
             var graphStyle = ReadAppearance();
@@ -147,6 +180,7 @@ public sealed class SettingsForm : Form
             using var arrows = new Font("Segoe UI", 18, FontStyle.Bold, GraphicsUnit.Pixel);
             ratePreview.Height = (int)Math.Ceiling(RateRenderer.Measure(numbers, captions, arrows, compact.Checked).Height * ratePreview.DeviceDpi / 96f);
             ratePreview.Invalidate();
+            framePreview.Invalidate();
         }
         rateBackground.Changed += (_, _) => RefreshRates();
         rateText.Changed += (_, _) => RefreshRates();
@@ -180,6 +214,7 @@ public sealed class SettingsForm : Form
             gridStyle.Enabled = gridColor.Enabled = showGrid.Checked;
             fillOpacity.Enabled = fill.Checked;
             preview.Invalidate();
+            RefreshFrame();
             RefreshRates();
         }
         foreach (var color in new[] { down, up, background, gridColor }) color.Changed += (_, _) => RefreshPreview();
@@ -241,6 +276,7 @@ public sealed class SettingsForm : Form
             settings.SnapToEdges = snap.Checked;
             settings.Graph = ReadAppearance();
             settings.Rates = ReadRates();
+            settings.Frame = ReadFrame();
             settings.Storage.Enabled = storeEnabled.Checked;
             settings.Storage.RetentionDays = (int)retention.Value;
             DialogResult = DialogResult.OK;

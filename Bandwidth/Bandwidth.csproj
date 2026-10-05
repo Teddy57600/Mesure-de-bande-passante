@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>MiniDebit</AssemblyName>
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 </Project>
