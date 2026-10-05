@@ -8,6 +8,74 @@ void Check(bool condition, string description)
     Console.WriteLine($"OK {++count:00} — {description}");
 }
 var now = DateTimeOffset.Now;
+var desktop = new System.Drawing.Rectangle(0, 0, 1920, 1040);
+var slowDrag = new WindowDrag();
+var dragged = new System.Drawing.Rectangle(0, 0, 340, 176);
+slowDrag.Begin(new(80, 40), dragged);
+for (int pixel = 1; pixel <= 20; pixel++)
+{
+    var incremental = new System.Drawing.Rectangle(dragged.Left + 1, dragged.Top + 1, dragged.Width, dragged.Height);
+    dragged = WindowPlacement.Snap(slowDrag.BoundsAt(new(80 + pixel, 40 + pixel), incremental), desktop, 8);
+}
+Check(dragged.Location == new System.Drawing.Point(20, 20),
+    "Un déplacement lent pixel par pixel détache la fenêtre du coin sans perdre les mouvements");
+dragged = new(1580, 864, 340, 176);
+slowDrag.Begin(new(1660, 904), dragged);
+for (int pixel = 1; pixel <= 20; pixel++)
+{
+    var incremental = new System.Drawing.Rectangle(dragged.Left - 1, dragged.Top - 1, dragged.Width, dragged.Height);
+    dragged = WindowPlacement.Snap(slowDrag.BoundsAt(new(1660 - pixel, 904 - pixel), incremental), desktop, 8);
+}
+Check(dragged.Location == new System.Drawing.Point(1560, 844),
+    "Le détachement lent fonctionne aussi au-dessus de la barre des tâches et à droite");
+slowDrag.End();
+Check(slowDrag.BoundsAt(new(100, 100), new(500, 500, 340, 176)).Location == new System.Drawing.Point(500, 500),
+    "La fin du déplacement libère le point de prise pour le prochain déplacement");
+Check(WindowPlacement.Snap(new(8, 7, 340, 176), desktop, 12).Location == new System.Drawing.Point(0, 0),
+    "Le widget accroche simultanément aux bords supérieur et gauche");
+Check(WindowPlacement.Snap(new(1572, 859, 340, 176), desktop, 12).Location == new System.Drawing.Point(1580, 864),
+    "Le bord inférieur s’arrête au-dessus de la barre des tâches");
+Check(WindowPlacement.Snap(new(900, 1000, 340, 176), desktop, 12).Bottom == desktop.Bottom,
+    "Le déplacement ne permet pas de recouvrir la barre des tâches");
+Check(WindowPlacement.Snap(new(700, 400, 340, 176), desktop, 12).Location == new System.Drawing.Point(700, 400),
+    "Un déplacement loin des bords reste libre");
+var secondary = new System.Drawing.Rectangle(-1920, 40, 1920, 1040);
+Check(WindowPlacement.Snap(new(-1912, 48, 340, 176), secondary, 12).Location == new System.Drawing.Point(-1920, 40),
+    "Les écrans aux coordonnées négatives et une barre des tâches en haut sont respectés");
+Check(WindowPlacement.Snap(new(44, 500, 340, 176), new(40, 0, 1880, 1080), 12).Left == 40,
+    "Une barre des tâches à gauche est respectée");
+Exception? movementFailure = null;
+var movementThread = new Thread(() =>
+{
+    try
+    {
+        var movementSettings = new Settings { Storage = new HistorySettings { Enabled = false } };
+        using var widget = new Widget(movementSettings, diagnostic: true);
+        var work = System.Windows.Forms.Screen.FromPoint(System.Windows.Forms.Cursor.Position).WorkingArea;
+        var proposed = new MovingProbe.Rect { Left = work.Left + 2, Top = work.Top + 2,
+            Right = work.Left + 342, Bottom = work.Top + 178 };
+        var memory = System.Runtime.InteropServices.Marshal.AllocHGlobal(16);
+        try
+        {
+            System.Runtime.InteropServices.Marshal.StructureToPtr(proposed, memory, false);
+            MovingProbe.Send(widget.Handle, 0x0216, 0, memory);
+            var actual = System.Runtime.InteropServices.Marshal.PtrToStructure<MovingProbe.Rect>(memory);
+            Check(actual.Left == work.Left && actual.Top == work.Top,
+                "Le message Windows de déplacement applique réellement l’accrochage");
+            movementSettings.SnapToEdges = false;
+            System.Runtime.InteropServices.Marshal.StructureToPtr(proposed, memory, false);
+            MovingProbe.Send(widget.Handle, 0x0216, 0, memory);
+            actual = System.Runtime.InteropServices.Marshal.PtrToStructure<MovingProbe.Rect>(memory);
+            Check(actual.Left == proposed.Left && actual.Top == proposed.Top,
+                "Désactiver l’accrochage conserve le déplacement Windows habituel");
+        }
+        finally { System.Runtime.InteropServices.Marshal.FreeHGlobal(memory); }
+    }
+    catch (Exception ex) { movementFailure = ex; }
+});
+movementThread.SetApartmentState(ApartmentState.STA);
+movementThread.Start(); movementThread.Join();
+if (movementFailure is not null) throw movementFailure;
 Sample[] peakSamples = [new(now.AddSeconds(-61), 900000, 0), new(now.AddSeconds(-55), 12000, 8000), new(now.AddSeconds(-1), 5000, 20000)];
 var peakNow = TrafficPeak.InWindow(peakSamples, now, 60);
 Check(peakNow.Rate == 20000 && !peakNow.Reception, "Le maximum couvre uniquement la période visible, réception et envoi comparés");
@@ -151,3 +219,11 @@ using (var failed = new HistoryRecorder(directory))
     Check(failed.Error is not null, "Une erreur de stockage est signalée sans arrêter les mesures");
 }
 Console.WriteLine($"\n{count} vérifications réussies.");
+
+static class MovingProbe
+{
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct Rect { public int Left, Top, Right, Bottom; }
+    [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "SendMessageW")]
+    public static extern nint Send(nint window, uint message, nint wparam, nint lparam);
+}

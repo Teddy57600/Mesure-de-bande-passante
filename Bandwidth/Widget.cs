@@ -10,6 +10,7 @@ public sealed class Widget : Form
     private readonly Settings settings;
     private readonly bool diagnostic;
     private readonly NetworkMonitor monitor = new();
+    private readonly WindowDrag drag = new();
     private readonly HistoryRecorder recorder;
     private readonly Queue<Sample> history = new();
     private readonly System.Windows.Forms.Timer timer = new();
@@ -311,8 +312,15 @@ public sealed class Widget : Form
                 resizing = true; resizeOrigin = MousePosition; resizeSize = Size; Capture = true;
                 return;
             }
-            ReleaseCapture();
-            SendMessage(Handle, 0xA1, 2, 0); // WM_NCLBUTTONDOWN / HTCAPTION
+            var pointer = MousePosition;
+            drag.Begin(pointer, Bounds);
+            try
+            {
+                ReleaseCapture();
+                var position = new nint(unchecked((int)((uint)(ushort)pointer.X | ((uint)(ushort)pointer.Y << 16))));
+                SendMessage(Handle, 0xA1, 2, position); // WM_NCLBUTTONDOWN / HTCAPTION, screen coordinates
+            }
+            finally { drag.End(); }
         }
     }
 
@@ -339,6 +347,31 @@ public sealed class Widget : Form
         if (keyData == (Keys.Control | Keys.Oemcomma)) { OpenSettings(); return true; }
         if (keyData == Keys.Escape) { Hide(); return true; }
         return base.ProcessCmdKey(ref msg, keyData);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRectangle { public int Left, Top, Right, Bottom; }
+
+    protected override void WndProc(ref Message message)
+    {
+        const int Moving = 0x0216;
+        const int ExitSizeMove = 0x0232;
+        if (message.Msg == Moving && message.LParam != 0 && settings.SnapToEdges)
+        {
+            var proposed = Marshal.PtrToStructure<NativeRectangle>(message.LParam);
+            // Follow the pointer so clamping never prevents crossing to another monitor.
+            var pointer = MousePosition;
+            var area = Screen.FromPoint(pointer).WorkingArea;
+            // Use the original grab point: snapping must never erase small pointer movements.
+            var bounds = drag.BoundsAt(pointer, Rectangle.FromLTRB(proposed.Left, proposed.Top, proposed.Right, proposed.Bottom));
+            var snapped = WindowPlacement.Snap(bounds, area, (int)Math.Round(8 * DpiScale));
+            Marshal.StructureToPtr(new NativeRectangle { Left = snapped.Left, Top = snapped.Top,
+                Right = snapped.Right, Bottom = snapped.Bottom }, message.LParam, false);
+            message.Result = new nint(1);
+            return;
+        }
+        base.WndProc(ref message);
+        if (message.Msg == ExitSizeMove) { drag.End(); SaveSettings(); }
     }
 
     private void ToggleVisibility() { if (Visible) Hide(); else { Show(); Activate(); } }

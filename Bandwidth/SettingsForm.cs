@@ -52,7 +52,7 @@ public sealed class SettingsForm : Form
             table.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, row);
             table.Controls.Add(control, 1, row);
         }
-        var table = Table(general, 9, 35);
+        var table = Table(general, 10, 35);
         var adapter = Choice(new AdapterChoice("auto", "Automatique (une carte)"), new AdapterChoice("all", "Toutes les cartes (cumul)"));
         try { adapter.Items.AddRange(NetworkMonitor.Choices().Cast<object>().ToArray()); }
         catch (System.Net.NetworkInformation.NetworkInformationException) { }
@@ -72,7 +72,9 @@ public sealed class SettingsForm : Form
         Row(table, 7, "Affichage", onTop);
         var hidden = new CheckBox { Text = "Dans la zone de notification", Checked = settings.StartHidden, Dock = DockStyle.Fill };
         Row(table, 8, "Au lancement", hidden);
-        general.Controls.Add(new Label { Location = new Point(12, 343), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\n\nLe cumul peut compter deux fois le trafic d’un VPN.\nPour une mesure précise, choisissez une seule carte réseau." });
+        var snap = new CheckBox { Text = "Accrocher aux bords de l’écran", Checked = settings.SnapToEdges, Dock = DockStyle.Fill };
+        Row(table, 9, "Déplacement", snap);
+        general.Controls.Add(new Label { Location = new Point(12, 378), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\n\nLe cumul peut compter deux fois le trafic d’un VPN.\nPour une mesure précise, choisissez une seule carte réseau." });
 
         var appearance = settings.Graph;
         var graphTable = Table(graph, 12, 30);
@@ -236,6 +238,7 @@ public sealed class SettingsForm : Form
             settings.FixedScaleMbps = (double)scale.Value;
             settings.AlwaysOnTop = onTop.Checked;
             settings.StartHidden = hidden.Checked;
+            settings.SnapToEdges = snap.Checked;
             settings.Graph = ReadAppearance();
             settings.Rates = ReadRates();
             settings.Storage.Enabled = storeEnabled.Checked;

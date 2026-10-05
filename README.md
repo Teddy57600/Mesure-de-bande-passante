@@ -19,6 +19,7 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 ## Utilisation
 
 - **Glisser la fenêtre** pour la déplacer ; tirer son coin inférieur droit pour la redimensionner.
+- Pendant le déplacement, le widget **accroche aux quatre bords** à environ 8 px (adaptés à la mise à l’échelle Windows). Éloigner la souris du bord le détache, même en déplaçant lentement la souris. Le point de prise initial reste la référence pendant tout le déplacement. Le widget reste dans la zone utilisable du moniteur sous le pointeur, au-dessus d’une barre des tâches en bas ou à côté d’une barre latérale. Déplacer le pointeur sur un autre écran pour y faire passer le widget. **Général → Déplacement → Accrocher aux bords de l’écran**, activé par défaut, permet de désactiver ce comportement. La position est mémorisée à la fin du déplacement.
 - Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère cet espace ; les débits restent visibles en bas.
 - **Roue dentée**, **double-clic** ou **clic droit → Paramètres** : configurer le widget.
 - **−** ou **Échap** : masquer le widget dans la zone de notification près de l’horloge. Son icône peut se trouver dans le menu des icônes masquées de Windows.
