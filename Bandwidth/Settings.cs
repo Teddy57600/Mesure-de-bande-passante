@@ -4,9 +4,10 @@ namespace MiniDebit;
 
 public sealed class Settings
 {
+    public int ConfigurationVersion { get; set; }
     public string AdapterId { get; set; } = "auto";
     public int IntervalMs { get; set; } = 1000;
-    public int HistorySeconds { get; set; } = 60;
+    public int HistorySeconds { get; set; } = 300;
     public bool Bits { get; set; }
     public bool Dark { get; set; } = true;
     public bool AlwaysOnTop { get; set; } = true;
@@ -23,9 +24,13 @@ public sealed class Settings
 
     public void Normalize()
     {
+        // Upgrade the original default without changing the sampling interval
+        // or a different history duration already selected by the user.
+        if (ConfigurationVersion < 1 && HistorySeconds == 60) HistorySeconds = 300;
+        ConfigurationVersion = 1;
         AdapterId = string.IsNullOrWhiteSpace(AdapterId) ? "auto" : AdapterId;
         IntervalMs = Math.Clamp(IntervalMs, 250, 5000);
-        HistorySeconds = Math.Clamp(HistorySeconds, 15, 600);
+        HistorySeconds = Math.Clamp(HistorySeconds, 15, 3600);
         OpacityPercent = Math.Clamp(OpacityPercent, 35, 100);
         FixedScaleMbps = double.IsFinite(FixedScaleMbps) ? Math.Clamp(FixedScaleMbps, 0, 100000) : 0;
         Width = Math.Clamp(Width, 270, 1000);
@@ -57,6 +62,9 @@ public sealed class Settings
 
 public static class Units
 {
+    public static string Duration(int seconds) => seconds < 60 ? $"{seconds} s"
+        : seconds < 3600 ? $"{seconds / 60.0:0.##} min" : $"{seconds / 3600.0:0.##} h";
+
     public static string Rate(double bytesPerSecond, bool bits)
     {
         double value = Math.Max(0, bytesPerSecond) * (bits ? 8 : 1);

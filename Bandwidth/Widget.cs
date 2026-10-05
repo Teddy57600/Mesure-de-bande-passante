@@ -125,7 +125,7 @@ public sealed class Widget : Form
         {
             var text = $"MiniDébit · ↓ {Units.Rate(current.Down, settings.Bits)} · ↑ {Units.Rate(current.Up, settings.Bits)}";
             tray.Text = text.Length > 63 ? text[..63] : text;
-            tooltip.SetToolTip(this, $"{monitor.Status}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Historique : {settings.HistorySeconds} s\nClic droit ou double-clic : paramètres");
+            tooltip.SetToolTip(this, $"{monitor.Status}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Période : {Units.Duration(settings.HistorySeconds)}\nClic droit ou double-clic : paramètres");
         }
         if (Visible) Invalidate();
     }
@@ -180,7 +180,7 @@ public sealed class Widget : Form
         if (HeaderVisible)
         {
             DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, chartTop - 16, 160, 14));
-            DrawText(g, $"{settings.HistorySeconds} s", smallFont, Muted, new RectangleF(w - 64, chartTop - 16, 51, 14), StringAlignment.Far);
+            DrawText(g, Units.Duration(settings.HistorySeconds), smallFont, Muted, new RectangleF(w - 84, chartTop - 16, 71, 14), StringAlignment.Far);
         }
         using (var gridPen = new Pen(Grid, .6f) { DashStyle = DashStyle.Dot })
         {

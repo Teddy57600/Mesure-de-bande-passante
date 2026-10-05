@@ -37,7 +37,7 @@ La position, les dimensions et les paramètres sont mémorisés dans `%LOCALAPPD
 |---|---|
 | Carte réseau | Automatique, carte précise ou cumul des cartes actives |
 | Actualisation | 250 à 5 000 ms ; 1 000 ms par défaut |
-| Historique | 15 à 600 secondes ; 60 secondes par défaut |
+| Période affichée | 0,25 à 60 minutes (15 secondes à 1 heure) ; 5 minutes par défaut |
 | Unités | Octets/s (Ko/s, Mo/s) ou bits/s (Mbit/s, Gbit/s) |
 | Apparence | Sombre ou claire |
 | Opacité | 35 à 100 % |
@@ -50,6 +50,8 @@ Le mode automatique favorise une carte Ethernet/Wi-Fi active avec une passerelle
 Les unités sont décimales : **1 Ko = 1 000 octets ; 1 Mo/s = 8 Mbit/s**. Un plafond fixe peut couper visuellement les pics du graphique ; les valeurs numériques continuent d’afficher le débit mesuré.
 
 MiniDébit observe le trafic total de la carte, y compris les échanges locaux. Il ne mesure pas la vitesse maximale de la connexion Internet et ne sépare pas le trafic par application. Il ne lance aucun téléchargement de test. Le changement de carte remet les volumes de session et le graphique à zéro.
+
+La **période affichée** règle la vitesse du défilement, indépendamment de l’**actualisation des mesures**. Avec 5 minutes, le graphique défile cinq fois plus lentement qu’avec une minute, tout en continuant de mesurer et d’afficher les débits toutes les 1 000 ms par défaut. Le réglage se trouve dans **Paramètres → Période affichée (min)**. Une période plus longue se remplit progressivement avec les nouvelles mesures ; le programme ne peut pas reconstituer des données déjà supprimées. Lors de la mise à jour, l’ancienne valeur de 60 secondes devient 5 minutes ; une autre période personnalisée et le délai de mesure sont conservés.
 
 L’historique reste en mémoire et sa taille est bornée. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
 

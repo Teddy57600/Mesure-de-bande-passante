@@ -22,7 +22,7 @@ public sealed class SettingsForm : Form
         var title = new Label { Text = "Un widget à votre mesure", Font = new Font(Font.FontFamily, 16, FontStyle.Bold),
             AutoSize = true, Location = new Point(24, 20) };
         Controls.Add(title);
-        Controls.Add(new Label { Text = "Les changements s’appliquent dès l’enregistrement.", AutoSize = true, Location = new Point(25, 54) });
+        Controls.Add(new Label { Text = "La période du graphique est indépendante des mesures.", AutoSize = true, Location = new Point(25, 54) });
         var table = new TableLayoutPanel { Location = new Point(24, 86), Size = new Size(450, 320), ColumnCount = 2, RowCount = 9 };
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 175));
         table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -47,8 +47,10 @@ public sealed class SettingsForm : Form
             adapter.Items.Add(new AdapterChoice(settings.AdapterId, "Carte sélectionnée (indisponible)"));
         adapter.SelectedIndex = adapter.Items.Cast<AdapterChoice>().ToList().FindIndex(a => a.Id == settings.AdapterId);
         Row(0, "Carte réseau", adapter);
-        var interval = Number(250, 5000, settings.IntervalMs, 250); Row(1, "Actualisation (ms)", interval);
-        var history = Number(15, 600, settings.HistorySeconds, 15); Row(2, "Historique (secondes)", history);
+        var interval = Number(250, 5000, settings.IntervalMs, 250); Row(1, "Mesure toutes les (ms)", interval);
+        var history = Number(0.25m, 60, settings.HistorySeconds / 60m, 0.25m);
+        history.DecimalPlaces = 2;
+        Row(2, "Période affichée (min)", history);
         var units = Choice("Octets/s : Ko/s, Mo/s", "Bits/s : Mbit/s, Gbit/s");
         units.SelectedIndex = settings.Bits ? 1 : 0; Row(3, "Unités du débit", units);
         var theme = Choice("Sombre", "Clair"); theme.SelectedIndex = settings.Dark ? 0 : 1; Row(4, "Apparence", theme);
@@ -72,7 +74,7 @@ public sealed class SettingsForm : Form
             MeasurementChanged = settings.AdapterId != id;
             settings.AdapterId = id;
             settings.IntervalMs = (int)interval.Value;
-            settings.HistorySeconds = (int)history.Value;
+            settings.HistorySeconds = (int)Math.Round(history.Value * 60);
             settings.Bits = units.SelectedIndex == 1;
             settings.Dark = theme.SelectedIndex == 0;
             settings.OpacityPercent = (int)opacity.Value;

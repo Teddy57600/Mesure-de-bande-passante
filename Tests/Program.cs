@@ -39,7 +39,7 @@ Check(Units.Volume(1500000) == "1,5 Mo", "Volumes en unités décimales");
 var settings = new Settings { IntervalMs = -1, HistorySeconds = 100000, OpacityPercent = 0,
     FixedScaleMbps = double.NaN, Width = 1, Height = 9999 };
 settings.Normalize();
-Check(settings.IntervalMs == 250 && settings.HistorySeconds == 600 && settings.OpacityPercent == 35,
+Check(settings.IntervalMs == 250 && settings.HistorySeconds == 3600 && settings.OpacityPercent == 35,
     "Les réglages hors limites sont bornés");
 Check(settings.FixedScaleMbps == 0 && settings.Width == 270 && settings.Height == 600,
     "Échelle et dimensions invalides corrigées");
@@ -51,6 +51,22 @@ settings.Save(path);
 var loaded = Settings.Load(path);
 Check(loaded.AdapterId == settings.AdapterId && loaded.IntervalMs == settings.IntervalMs,
     "Persistance JSON et relecture des paramètres");
+File.WriteAllText(path, "{\"HistorySeconds\":60,\"IntervalMs\":1750}");
+var migrated = Settings.Load(path);
+Check(migrated.HistorySeconds == 300 && migrated.IntervalMs == 1750,
+    "Ancienne période par défaut portée à cinq minutes sans changer la fréquence");
+File.WriteAllText(path, "{\"HistorySeconds\":120,\"IntervalMs\":1000}");
+Check(Settings.Load(path).HistorySeconds == 120, "Une période personnalisée existante est conservée");
+var independent = new Settings { ConfigurationVersion = 1, HistorySeconds = 60, IntervalMs = 1000 };
+independent.Save(path);
+Check(Settings.Load(path).HistorySeconds == 60, "Une minute reste sélectionnable après la mise à jour");
+independent.HistorySeconds = 3600;
+independent.Save(path);
+var longHistory = Settings.Load(path);
+Check(longHistory.HistorySeconds == 3600 && longHistory.IntervalMs == 1000,
+    "Une heure de graphique conserve les mesures toutes les 1000 ms");
+Check(Units.Duration(15) == "15 s" && Units.Duration(300) == "5 min" && Units.Duration(3600) == "1 h",
+    "Affichage lisible des périodes en secondes, minutes et heures");
 File.WriteAllText(path, "{invalide");
 Check(Settings.Load(path).IntervalMs == 1000, "Un fichier JSON corrompu restaure les valeurs par défaut");
 Check(Settings.Load(Path.Combine(directory, "absent.json")).AdapterId == "auto", "Première ouverture sans configuration");
