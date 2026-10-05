@@ -79,7 +79,7 @@ internal static class Program
                         process.Refresh();
                         File.WriteAllText(report, JsonSerializer.Serialize(new
                         {
-                            Adapter = window.MonitorStatus, window.SampleCount,
+                            Adapter = window.MonitorStatus, window.ExternalIpv4, window.ExternalIpv4Error, window.SampleCount,
                             window.TotalDown, window.TotalUp,
                             window.StoredSamples, window.DroppedSamples, window.StorageStatus,
                             WorkingSetMiB = process.WorkingSet64 / 1048576.0,

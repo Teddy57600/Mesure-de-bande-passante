@@ -10,6 +10,7 @@ public sealed class Widget : Form
     private readonly Settings settings;
     private readonly bool diagnostic;
     private readonly NetworkMonitor monitor = new();
+    private readonly PublicIpv4 publicIpv4 = new();
     private readonly WindowDrag drag = new();
     private readonly HistoryRecorder recorder;
     private readonly Queue<Sample> history = new();
@@ -33,6 +34,9 @@ public sealed class Widget : Form
     private double scale = 125000;
     private TrafficPeak visiblePeak;
     public string MonitorStatus => monitor.Status;
+    public string? ExternalIpv4 => publicIpv4.Address;
+    public string? ExternalIpv4Error => publicIpv4.LastError;
+    private string AdapterCaption => publicIpv4.Address is { } address ? $"{monitor.Status} ({address})" : monitor.Status;
     public int SampleCount { get; private set; }
     public double TotalDown => monitor.TotalDown;
     public double TotalUp => monitor.TotalUp;
@@ -107,6 +111,7 @@ public sealed class Widget : Form
     private void ApplySettings()
     {
         settings.Normalize();
+        publicIpv4.Update(monitor.PublicIpv4Target, settings.ShowPublicIpv4);
         recorder.Configure(settings.Storage);
         var numbers = settings.Rates.CreateFont();
         var captions = settings.Rates.CreateFont(true);
@@ -122,6 +127,7 @@ public sealed class Widget : Form
     private void Tick()
     {
         current = monitor.Poll(settings.AdapterId);
+        publicIpv4.Update(monitor.PublicIpv4Target, settings.ShowPublicIpv4);
         recorder.Record(current, monitor.ActiveAdapterKey, monitor.Status, settings.IntervalMs);
         SampleCount++;
         history.Enqueue(current);
@@ -138,7 +144,7 @@ public sealed class Widget : Form
         {
             var text = $"MiniDébit · ↓ {Units.Rate(current.Down, settings.Bits)} · ↑ {Units.Rate(current.Up, settings.Bits)}";
             tray.Text = text.Length > 63 ? text[..63] : text;
-            tooltip.SetToolTip(this, $"{monitor.Status}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Période : {Units.Duration(settings.HistorySeconds)}\nClic droit ou double-clic : paramètres");
+            tooltip.SetToolTip(this, $"{AdapterCaption}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Période : {Units.Duration(settings.HistorySeconds)}\nClic droit ou double-clic : paramètres");
         }
         if (Visible) Invalidate();
     }
@@ -181,7 +187,7 @@ public sealed class Widget : Form
             using var accent = new SolidBrush(DownColor);
             g.FillEllipse(accent, 13, 14, 6, 6);
             DrawText(g, "MINIDÉBIT", titleFont, Foreground, new RectangleF(25, 8, 105, 20));
-            DrawText(g, monitor.Status, smallFont, Muted, new RectangleF(13, 30, w - 26, 16));
+            DrawText(g, AdapterCaption, smallFont, Muted, new RectangleF(13, 30, w - 26, 16));
             DrawButton(g, 0, "⚙", w - 81);
             DrawButton(g, 1, "−", w - 55);
             DrawButton(g, 2, "×", w - 29);
@@ -380,6 +386,7 @@ public sealed class Widget : Form
     private void OpenSettings()
     {
         using var dialog = new SettingsForm(settings, ownedIcon!, () => recorder.Status);
+        if (Visible) { dialog.StartPosition = FormStartPosition.Manual; dialog.Location = Location; }
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         if (dialog.MeasurementChanged) ResetMeasurements();
         ApplySettings();
@@ -413,6 +420,7 @@ public sealed class Widget : Form
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         timer.Stop();
+        publicIpv4.Dispose();
         recorder.Dispose();
         SaveSettings();
         base.OnFormClosing(e);
@@ -424,6 +432,7 @@ public sealed class Widget : Form
         {
             timer.Dispose(); tray.Dispose(); menu.Dispose(); tooltip.Dispose();
             recorder.Dispose();
+            publicIpv4.Dispose();
             titleFont.Dispose(); smallFont.Dispose(); rateFont.Dispose(); labelFont.Dispose(); arrowFont.Dispose(); ownedIcon?.Dispose();
         }
         base.Dispose(disposing);

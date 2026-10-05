@@ -8,6 +8,44 @@ void Check(bool condition, string description)
     Console.WriteLine($"OK {++count:00} — {description}");
 }
 var now = DateTimeOffset.Now;
+Check(PublicIpv4.Parse("203.0.113.42\n") == "203.0.113.42" && PublicIpv4.Parse("2001:db8::1") is null &&
+    PublicIpv4.Parse("192.168.1.2") is null && PublicIpv4.Parse("<html>Erreur</html>") is null,
+    "La réponse externe doit contenir une IPv4, jamais une IP locale ou une page d’erreur");
+int ipCalls = 0;
+var ipAnswer = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+using var ipStarted = new ManualResetEventSlim();
+var ipTarget = new PublicIpv4Target("test", System.Net.IPAddress.Parse("192.168.1.2"), 1);
+using (var resolver = new PublicIpv4((_, _) => { Interlocked.Increment(ref ipCalls); ipStarted.Set(); return ipAnswer.Task; }))
+{
+    resolver.Update(ipTarget, false);
+    Check(ipCalls == 0 && resolver.Address is null, "L’IPv4 publique désactivée ne lance aucune requête");
+    resolver.Update(ipTarget, true);
+    Check(ipStarted.Wait(2000) && resolver.Address is null, "Une requête inachevée ne bloque pas le minuteur");
+    ipAnswer.SetResult("203.0.113.42");
+    Check(SpinWait.SpinUntil(() => { resolver.Update(ipTarget, true); return resolver.Address is not null; }, 2000),
+        "Le résultat asynchrone devient disponible pour le bandeau");
+    for (int i = 0; i < 100; i++) resolver.Update(ipTarget, true);
+    Check(ipCalls == 1, "Le cache évite une requête Internet à chaque mesure");
+    resolver.Update(ipTarget, false);
+    Check(resolver.Address is null, "Désactiver masque immédiatement l’adresse mémorisée");
+}
+var oldAnswer = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+using var oldStarted = new ManualResetEventSlim();
+using (var resolver = new PublicIpv4((_, _) => { oldStarted.Set(); return oldAnswer.Task; }))
+{
+    resolver.Update(ipTarget, true); oldStarted.Wait(2000);
+    resolver.Update(null, true); oldAnswer.SetResult("203.0.113.42");
+    resolver.Update(null, true);
+    Check(resolver.Address is null, "Une réponse tardive d’une ancienne carte ne peut pas être affichée");
+}
+using var errorStarted = new ManualResetEventSlim();
+int errorCalls = 0;
+using (var resolver = new PublicIpv4((_, _) => { Interlocked.Increment(ref errorCalls); errorStarted.Set(); throw new System.Net.Http.HttpRequestException("test"); }))
+{
+    resolver.Update(ipTarget, true); errorStarted.Wait(2000);
+    Thread.Sleep(20); resolver.Update(ipTarget, true);
+    Check(resolver.Address is null && errorCalls == 1, "Une erreur Internet laisse les mesures fonctionner sans réessai immédiat");
+}
 var desktop = new System.Drawing.Rectangle(0, 0, 1920, 1040);
 var slowDrag = new WindowDrag();
 var dragged = new System.Drawing.Rectangle(0, 0, 340, 176);

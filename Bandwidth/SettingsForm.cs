@@ -9,6 +9,18 @@ public sealed class SettingsForm : Form
     internal void SelectHistoryTab() => tabs.SelectedIndex = 3;
     internal void SelectFrameTab() => tabs.SelectedIndex = 4;
 
+    protected override void OnLoad(EventArgs e)
+    {
+        base.OnLoad(e);
+        if (Owner is Widget widget && widget.Visible)
+        {
+            var current = Screen.FromRectangle(widget.Bounds);
+            var areas = Screen.AllScreens.OrderBy(screen => screen.DeviceName == current.DeviceName ? 0 : 1)
+                .Select(screen => screen.WorkingArea).ToArray();
+            Location = WindowPlacement.Beside(Size, widget.Bounds, areas, (int)Math.Round(12 * DeviceDpi / 96f));
+        }
+    }
+
     public SettingsForm(Settings settings, Icon icon, Func<string>? storageStatus = null)
     {
         Text = "MiniDébit — Paramètres";
@@ -54,7 +66,7 @@ public sealed class SettingsForm : Form
             table.Controls.Add(new Label { Text = label, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft }, 0, row);
             table.Controls.Add(control, 1, row);
         }
-        var table = Table(general, 10, 35);
+        var table = Table(general, 11, 35);
         var adapter = Choice(new AdapterChoice("auto", "Automatique (une carte)"), new AdapterChoice("all", "Toutes les cartes (cumul)"));
         try { adapter.Items.AddRange(NetworkMonitor.Choices().Cast<object>().ToArray()); }
         catch (System.Net.NetworkInformation.NetworkInformationException) { }
@@ -76,7 +88,9 @@ public sealed class SettingsForm : Form
         Row(table, 8, "Au lancement", hidden);
         var snap = new CheckBox { Text = "Accrocher aux bords de l’écran", Checked = settings.SnapToEdges, Dock = DockStyle.Fill };
         Row(table, 9, "Déplacement", snap);
-        general.Controls.Add(new Label { Location = new Point(12, 378), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\n\nLe cumul peut compter deux fois le trafic d’un VPN.\nPour une mesure précise, choisissez une seule carte réseau." });
+        var showPublicIpv4 = new CheckBox { Text = "Afficher l’IPv4 publique", Checked = settings.ShowPublicIpv4, Dock = DockStyle.Fill };
+        Row(table, 10, "Adresse externe", showPublicIpv4);
+        general.Controls.Add(new Label { Location = new Point(12, 413), Size = new Size(476, 85), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\nLe cumul peut compter deux fois le trafic d’un VPN.\nIPv4 publique : recherche via ipify sur la carte sélectionnée,\ntoutes les 10 minutes. Désactiver arrête les requêtes." });
 
         var appearance = settings.Graph;
         var graphTable = Table(graph, 12, 30);
@@ -274,6 +288,7 @@ public sealed class SettingsForm : Form
             settings.AlwaysOnTop = onTop.Checked;
             settings.StartHidden = hidden.Checked;
             settings.SnapToEdges = snap.Checked;
+            settings.ShowPublicIpv4 = showPublicIpv4.Checked;
             settings.Graph = ReadAppearance();
             settings.Rates = ReadRates();
             settings.Frame = ReadFrame();

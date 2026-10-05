@@ -13,6 +13,7 @@ public sealed class Settings
     public bool AlwaysOnTop { get; set; } = true;
     public bool StartHidden { get; set; }
     public bool SnapToEdges { get; set; } = true;
+    public bool ShowPublicIpv4 { get; set; } = true;
     public int OpacityPercent { get; set; } = 100;
     public double FixedScaleMbps { get; set; }
     public GraphAppearance Graph { get; set; } = new();

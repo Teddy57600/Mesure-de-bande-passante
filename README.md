@@ -22,6 +22,7 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 - Pendant le déplacement, le widget **accroche aux quatre bords** à environ 8 px (adaptés à la mise à l’échelle Windows). Éloigner la souris du bord le détache, même en déplaçant lentement la souris. Le point de prise initial reste la référence pendant tout le déplacement. Le widget reste dans la zone utilisable du moniteur sous le pointeur, au-dessus d’une barre des tâches en bas ou à côté d’une barre latérale. Déplacer le pointeur sur un autre écran pour y faire passer le widget. **Général → Déplacement → Accrocher aux bords de l’écran**, activé par défaut, permet de désactiver ce comportement. La position est mémorisée à la fin du déplacement.
 - Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère cet espace ; les débits restent visibles en bas.
 - **Roue dentée**, **double-clic** ou **clic droit → Paramètres** : configurer le widget.
+- Si le widget est visible, les paramètres s’ouvrent à côté, avec un espace de 12 px adapté à l’échelle Windows. Le placement cherche une place libre à droite, à gauche, au-dessus ou au-dessous, puis sur les autres écrans, en respectant la barre des tâches. Si les dimensions des écrans ne permettent aucune disposition sans recouvrement, il minimise la surface recouverte.
 - **−** ou **Échap** : masquer le widget dans la zone de notification près de l’horloge. Son icône peut se trouver dans le menu des icônes masquées de Windows.
 - **Double-clic sur l’icône** : afficher le widget.
 - **×** ou **Quitter** : arrêter l’application.
@@ -29,6 +30,12 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 - Survoler le widget : consulter les volumes reçus/envoyés depuis le lancement ou la dernière remise à zéro.
 
 La position, les dimensions et les paramètres sont mémorisés dans `%LOCALAPPDATA%\MiniDebit\settings.json`. Fermer l’application puis supprimer ce fichier pour retrouver les valeurs par défaut.
+
+Au survol, le nom de la carte peut afficher son **IPv4 publique entre parenthèses**, par exemple `Ethernet 2 (203.0.113.42)`. **Général → Adresse externe → Afficher l’IPv4 publique**, activé par défaut, permet d’activer ou de désactiver cette information. Désactiver masque immédiatement l’adresse et annule la recherche en cours ; aucune nouvelle requête n’est lancée.
+
+La recherche HTTPS utilise le service [ipify](https://www.ipify.org), en arrière-plan, au lancement, lorsque la carte ou son IPv4 locale change, puis toutes les dix minutes. Le socket est lié à l’IPv4 locale et à l’interface Windows sélectionnée ; aucun proxy système ni basculement sur une autre carte n’est utilisé. Après un échec, le délai avant réessai est d’une minute, avec huit secondes maximum par tentative. L’IPv4 publique est celle observée par le service sur cette connexion : elle peut appartenir au routeur ou à une sortie VPN, et différer de l’IPv4 locale de la carte.
+
+Si la carte est hors ligne, sans IPv4 ou sans accès à ce service, le nom reste affiché seul. Le mode cumul de plusieurs cartes ne présente pas une adresse publique unique. Les débits, le graphique et SQLite continuent de fonctionner indépendamment de la recherche ; l’adresse publique n’est pas enregistrée dans la base.
 
 ## Réglages
 

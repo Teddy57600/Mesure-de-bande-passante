@@ -66,6 +66,7 @@ public sealed class NetworkMonitor
     private readonly RateAccumulator accumulator = new();
     public string Status { get; private set; } = "Initialisation…";
     public string ActiveAdapterKey { get; private set; } = "";
+    public PublicIpv4Target? PublicIpv4Target { get; private set; }
     public double TotalDown => accumulator.TotalDown;
     public double TotalUp => accumulator.TotalUp;
 
@@ -82,7 +83,8 @@ public sealed class NetworkMonitor
         if (selection != adapterId) { Reset(); selection = adapterId; }
         try
         {
-            if (lastRefresh == 0 || Stopwatch.GetElapsedTime(lastRefresh, now).TotalSeconds >= 5)
+            bool refreshed = lastRefresh == 0 || Stopwatch.GetElapsedTime(lastRefresh, now).TotalSeconds >= 5;
+            if (refreshed)
             {
                 adapters = NetworkInterface.GetAllNetworkInterfaces();
                 lastRefresh = now;
@@ -112,6 +114,20 @@ public sealed class NetworkMonitor
             }
             Status = counters.Count == 0 ? "Aucune interface active" : adapterId == "all" ? $"{counters.Count} interfaces • cumul" : selected[0].Name;
             ActiveAdapterKey = string.Join(",", counters.Select(c => c.Id));
+            if (counters.Count != 1 || selected.Length != 1) PublicIpv4Target = null;
+            else if (refreshed || PublicIpv4Target?.AdapterId != selected[0].Id)
+            {
+                PublicIpv4Target = null;
+                try
+                {
+                    var properties = selected[0].GetIPProperties();
+                    var address = properties.UnicastAddresses.FirstOrDefault(a => a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
+                        !System.Net.IPAddress.IsLoopback(a.Address) && !a.Address.ToString().StartsWith("169.254.", StringComparison.Ordinal));
+                    if (address is not null && properties.GetIPv4Properties() is { } ipv4)
+                        PublicIpv4Target = new(selected[0].Id, address.Address, ipv4.Index);
+                }
+                catch (Exception ex) when (ex is NetworkInformationException or PlatformNotSupportedException) { }
+            }
             var elapsed = lastSample == 0 ? 0 : Stopwatch.GetElapsedTime(lastSample, now).TotalSeconds;
             lastSample = now;
             return accumulator.Update(counters, elapsed, DateTimeOffset.Now);
@@ -120,6 +136,7 @@ public sealed class NetworkMonitor
         {
             Status = "Mesure indisponible";
             ActiveAdapterKey = "";
+            PublicIpv4Target = null;
             lastRefresh = 0;
             lastSample = now;
             return accumulator.Update([], 0, DateTimeOffset.Now);
