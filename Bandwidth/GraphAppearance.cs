@@ -19,6 +19,7 @@ public sealed class GraphAppearance
     public bool FillArea { get; set; } = true;
     public int FillOpacityPercent { get; set; } = 14;
     public bool ShowMaximum { get; set; } = true;
+    public int MarginPixels { get; set; } = 3;
 
     public void Normalize()
     {
@@ -30,6 +31,7 @@ public sealed class GraphAppearance
         LineStyle = Math.Clamp(LineStyle, 0, 2);
         GridStyle = Math.Clamp(GridStyle, 0, 2);
         FillOpacityPercent = Math.Clamp(FillOpacityPercent, 0, 100);
+        MarginPixels = Math.Clamp(MarginPixels, 0, 20);
     }
 
     internal static string NormalizeColor(string? value, string fallback) =>
@@ -63,7 +65,7 @@ internal static class GraphRenderer
         using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center,
             FormatFlags = StringFormatFlags.NoWrap, Trimming = StringTrimming.EllipsisCharacter };
         float width = Math.Min(chart.Width - 4, g.MeasureString(label, font).Width + 8);
-        var textBounds = new RectangleF(chart.Left + (chart.Width - width) / 2, y - 14, width, 12);
+        var textBounds = new RectangleF(chart.Left + (chart.Width - width) / 2, Math.Max(chart.Top, y - 14), width, 12);
         using var background = new SolidBrush(appearance.Background(dark));
         using var text = new SolidBrush(color);
         g.FillRectangle(background, textBounds);
@@ -131,8 +133,10 @@ internal sealed class GraphPreview : Control
         float dpi = DeviceDpi / 96f;
         g.ScaleTransform(dpi, dpi);
         g.SmoothingMode = SmoothingMode.AntiAlias;
-        var chart = new RectangleF(0, 0, Width / dpi - 1, Height / dpi - 1);
         var style = appearance();
+        float margin = style.MarginPixels + 1;
+        g.Clear(style.Background(dark()));
+        var chart = new RectangleF(margin, margin, Width / dpi - 2 * margin, Height / dpi - 2 * margin);
         GraphRenderer.Backdrop(g, chart, style, dark());
         PointF[] Points(float[] values) => values.Select((value, index) =>
             new PointF(chart.Left + index * chart.Width / (values.Length - 1), chart.Bottom - value * chart.Height)).ToArray();

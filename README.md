@@ -19,7 +19,7 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 ## Utilisation
 
 - **Glisser la fenêtre** pour la déplacer ; tirer son coin inférieur droit pour la redimensionner.
-- Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère 52 pixels de hauteur ; les débits restent visibles en bas.
+- Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère cet espace ; les débits restent visibles en bas.
 - **Roue dentée**, **double-clic** ou **clic droit → Paramètres** : configurer le widget.
 - **−** ou **Échap** : masquer le widget dans la zone de notification près de l’horloge. Son icône peut se trouver dans le menu des icônes masquées de Windows.
 - **Double-clic sur l’icône** : afficher le widget.
@@ -36,6 +36,8 @@ La position, les dimensions et les paramètres sont mémorisés dans `%LOCALAPPD
 L’onglet **Général** regroupe les paramètres de mesure et du widget. L’onglet **Graphique** permet de personnaliser les couleurs de réception, d’envoi, du fond et de la grille, l’épaisseur des courbes (0,5 à 6 px), leur style (continu, pointillé ou tirets), la présence et le style de la grille, ainsi que le remplissage et son opacité (0 à 100 %). « Auto (thème) » fait suivre au fond et à la grille le thème clair ou sombre.
 
 ![Apparence du graphique](docs/settings-graph.png)
+
+**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. La bordure de fenêtre reste visible à zéro ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
 
 Le graphique affiche une ligne horizontale en tirets au niveau du **maximum observé sur la période visible**, avec la valeur juste au-dessus. La flèche et la couleur indiquent si ce pic vient de la réception (↓) ou de l’envoi (↑) ; les deux débits sont comparés, sans les additionner. Le maximum baisse lorsque les anciens pics sortent de la période. Il utilise les mêmes unités que le widget et reste visible hors survol. **Graphique → Maximum de la période** permet de masquer ou d’afficher ce repère. Si le maximum dépasse une échelle fixe, la ligne reste au plafond et la valeur exacte porte la mention « hors échelle ».
 

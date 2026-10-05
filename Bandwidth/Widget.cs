@@ -187,13 +187,17 @@ public sealed class Widget : Form
             DrawButton(g, 1, "−", w - 55);
             DrawButton(g, 2, "×", w - 29);
         }
-        float chartTop = HeaderVisible ? 65 : 13;
+        float margin = settings.Graph.MarginPixels + 1; // Keep the window border even at zero margin.
         float rateHeight = RateRenderer.Measure(rateFont, labelFont, arrowFont, settings.Rates.Compact).Height;
-        var chart = new RectangleF(13, chartTop, w - 26, h - chartTop - rateHeight - 9);
+        float headerHeight = HeaderVisible ? 62 : 0;
+        // Preserve room for the graph in small widgets with large fonts and margins.
+        float verticalMargin = Math.Min(settings.Graph.MarginPixels, Math.Max(0, (h - headerHeight - rateHeight - 18) / 2));
+        float chartTop = headerHeight + 1 + verticalMargin;
+        var chart = new RectangleF(margin, chartTop, w - 2 * margin, Math.Max(1, h - chartTop - rateHeight - 1 - verticalMargin));
         if (HeaderVisible)
         {
-            DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, chartTop - 16, 160, 14));
-            DrawText(g, Units.Duration(settings.HistorySeconds), smallFont, Muted, new RectangleF(w - 84, chartTop - 16, 71, 14), StringAlignment.Far);
+            DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, 47, 160, 14));
+            DrawText(g, Units.Duration(settings.HistorySeconds), smallFont, Muted, new RectangleF(w - 84, 47, 71, 14), StringAlignment.Far);
         }
         GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);

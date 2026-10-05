@@ -75,7 +75,7 @@ public sealed class SettingsForm : Form
         general.Controls.Add(new Label { Location = new Point(12, 343), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\n\nLe cumul peut compter deux fois le trafic d’un VPN.\nPour une mesure précise, choisissez une seule carte réseau." });
 
         var appearance = settings.Graph;
-        var graphTable = Table(graph, 11, 30);
+        var graphTable = Table(graph, 12, 30);
         var down = new ColorField(appearance.DownColor, appearance.Reception);
         var up = new ColorField(appearance.UpColor, appearance.Sending);
         var background = new ColorField(appearance.BackgroundColor, appearance.Background(settings.Dark), true);
@@ -98,14 +98,17 @@ public sealed class SettingsForm : Form
         Row(graphTable, 9, "Opacité du remplissage (%)", fillOpacity);
         var showMaximum = new CheckBox { Text = "Ligne et valeur du maximum", Checked = appearance.ShowMaximum, Dock = DockStyle.Fill };
         Row(graphTable, 10, "Maximum de la période", showMaximum);
+        var margin = Number(0, 20, appearance.MarginPixels);
+        Row(graphTable, 11, "Marge du graphique (px)", margin);
         GraphAppearance ReadAppearance() => new()
         {
             DownColor = down.Value, UpColor = up.Value, BackgroundColor = background.Value, GridColor = gridColor.Value,
             LineWidth = (double)thickness.Value, LineStyle = lineStyle.SelectedIndex, ShowGrid = showGrid.Checked,
-            GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value, ShowMaximum = showMaximum.Checked
+            GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value, ShowMaximum = showMaximum.Checked,
+            MarginPixels = (int)margin.Value
         };
-        graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 350), AutoSize = true });
-        var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 374), Size = new Size(476, 90) };
+        graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 380), AutoSize = true });
+        var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 404), Size = new Size(476, 70) };
         graph.Controls.Add(preview);
         var rateTable = Table(ratePage, 4, 40);
         var rateBackground = new ColorField(settings.Rates.BackgroundColor, settings.Rates.Background(settings.Graph, settings.Dark), true, "Fond graphique");
@@ -179,6 +182,7 @@ public sealed class SettingsForm : Form
         }
         foreach (var color in new[] { down, up, background, gridColor }) color.Changed += (_, _) => RefreshPreview();
         thickness.ValueChanged += (_, _) => RefreshPreview();
+        margin.ValueChanged += (_, _) => RefreshPreview();
         fillOpacity.ValueChanged += (_, _) => RefreshPreview();
         lineStyle.SelectedIndexChanged += (_, _) => RefreshPreview();
         gridStyle.SelectedIndexChanged += (_, _) => RefreshPreview();
@@ -186,7 +190,7 @@ public sealed class SettingsForm : Form
         fill.CheckedChanged += (_, _) => RefreshPreview();
         showMaximum.CheckedChanged += (_, _) => RefreshPreview();
         theme.SelectedIndexChanged += (_, _) => RefreshPreview();
-        var reset = new Button { Text = "Rétablir l’apparence par défaut", Location = new Point(12, 474), Size = new Size(256, 28) };
+        var reset = new Button { Text = "Rétablir l’apparence par défaut", Location = new Point(12, 484), Size = new Size(256, 28) };
         graph.Controls.Add(reset);
         reset.Click += (_, _) =>
         {
@@ -197,6 +201,7 @@ public sealed class SettingsForm : Form
             showGrid.Checked = defaults.ShowGrid; gridStyle.SelectedIndex = defaults.GridStyle;
             fill.Checked = defaults.FillArea; fillOpacity.Value = defaults.FillOpacityPercent;
             showMaximum.Checked = defaults.ShowMaximum;
+            margin.Value = defaults.MarginPixels;
             RefreshPreview();
         };
         RefreshPreview();
