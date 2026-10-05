@@ -8,7 +8,7 @@ public sealed record AdapterChoice(string Id, string Name)
     public override string ToString() => Name;
 }
 public readonly record struct Counters(string Id, long Received, long Sent);
-public readonly record struct Sample(DateTimeOffset Time, double Down, double Up);
+public readonly record struct Sample(DateTimeOffset Time, double Down, double Up, double ElapsedSeconds = 0, double ReceivedBytes = 0, double SentBytes = 0);
 public readonly record struct TrafficPeak(double Rate, bool Reception)
 {
     public static TrafficPeak InWindow(IEnumerable<Sample> samples, DateTimeOffset now, int seconds)
@@ -47,7 +47,7 @@ public sealed class RateAccumulator
         if (!(seconds > 0) || !double.IsFinite(seconds)) return new(now, 0, 0);
         TotalDown += received;
         TotalUp += sent;
-        return new(now, received / seconds, sent / seconds);
+        return new(now, received / seconds, sent / seconds, seconds, received, sent);
     }
 
     public void Reset()
@@ -65,6 +65,7 @@ public sealed class NetworkMonitor
     private string selection = "auto";
     private readonly RateAccumulator accumulator = new();
     public string Status { get; private set; } = "Initialisation…";
+    public string ActiveAdapterKey { get; private set; } = "";
     public double TotalDown => accumulator.TotalDown;
     public double TotalUp => accumulator.TotalUp;
 
@@ -110,6 +111,7 @@ public sealed class NetworkMonitor
                 catch (NetworkInformationException) { }
             }
             Status = counters.Count == 0 ? "Aucune interface active" : adapterId == "all" ? $"{counters.Count} interfaces • cumul" : selected[0].Name;
+            ActiveAdapterKey = string.Join(",", counters.Select(c => c.Id));
             var elapsed = lastSample == 0 ? 0 : Stopwatch.GetElapsedTime(lastSample, now).TotalSeconds;
             lastSample = now;
             return accumulator.Update(counters, elapsed, DateTimeOffset.Now);
@@ -117,6 +119,7 @@ public sealed class NetworkMonitor
         catch (Exception ex) when (ex is NetworkInformationException or PlatformNotSupportedException)
         {
             Status = "Mesure indisponible";
+            ActiveAdapterKey = "";
             lastRefresh = 0;
             lastSample = now;
             return accumulator.Update([], 0, DateTimeOffset.Now);

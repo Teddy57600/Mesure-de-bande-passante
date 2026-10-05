@@ -16,6 +16,7 @@ public sealed class Settings
     public double FixedScaleMbps { get; set; }
     public GraphAppearance Graph { get; set; } = new();
     public RateAppearance Rates { get; set; } = new();
+    public HistorySettings Storage { get; set; } = new();
     public int Width { get; set; } = 340;
     public int Height { get; set; } = 176;
     public int? X { get; set; }
@@ -41,6 +42,8 @@ public sealed class Settings
         Graph.Normalize();
         Rates ??= new RateAppearance();
         Rates.Normalize();
+        Storage ??= new HistorySettings();
+        Storage.Normalize();
     }
 
     public static Settings Load(string? path = null)

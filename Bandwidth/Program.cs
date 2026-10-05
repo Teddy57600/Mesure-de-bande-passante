@@ -14,15 +14,18 @@ internal static class Program
         var captureSettings = Argument(args, "--capture-settings");
         var captureGraphSettings = Argument(args, "--capture-graph-settings");
         var captureRateSettings = Argument(args, "--capture-rate-settings");
+        var captureHistorySettings = Argument(args, "--capture-history-settings");
+        var historyPath = Argument(args, "--history-db");
         var report = Argument(args, "--smoke-report");
-        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null)
+        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null)
         {
             var captureConfiguration = new Settings();
             captureConfiguration.Rates.Compact = args.Contains("--compact");
             using var dialog = new SettingsForm(captureConfiguration, SystemIcons.Application);
             if (captureGraphSettings is not null) dialog.SelectGraphTab();
             if (captureRateSettings is not null) dialog.SelectRatesTab();
-            var settingsCapturePath = captureRateSettings ?? captureGraphSettings ?? captureSettings!;
+            if (captureHistorySettings is not null) dialog.SelectHistoryTab();
+            var settingsCapturePath = captureHistorySettings ?? captureRateSettings ?? captureGraphSettings ?? captureSettings!;
             using var close = new System.Windows.Forms.Timer { Interval = 1000 };
             close.Tick += (_, _) =>
             {
@@ -45,8 +48,12 @@ internal static class Program
         }
         bool diagnostic = capture is not null || captureHover is not null || report is not null;
         var settings = diagnostic ? new Settings { AlwaysOnTop = false } : Settings.Load();
-        if (diagnostic) settings.Rates.Compact = args.Contains("--compact");
-        using var window = new Widget(settings, diagnostic);
+        if (diagnostic)
+        {
+            settings.Rates.Compact = args.Contains("--compact");
+            settings.Storage.Enabled = historyPath is not null;
+        }
+        using var window = new Widget(settings, diagnostic, diagnostic ? historyPath : null);
         if (diagnostic)
         {
             var process = Process.GetCurrentProcess();
@@ -54,7 +61,8 @@ internal static class Program
             var watch = Stopwatch.StartNew();
             using var warmup = new System.Windows.Forms.Timer { Interval = 2000 };
             warmup.Tick += (_, _) => { warmup.Stop(); startCpu = process.TotalProcessorTime; watch.Restart(); };
-            using var finish = new System.Windows.Forms.Timer { Interval = report is not null ? 32000 : 8000 };
+            int duration = args.Contains("--long-benchmark") ? 72000 : report is not null ? 32000 : 8000;
+            using var finish = new System.Windows.Forms.Timer { Interval = duration };
             finish.Tick += (_, _) =>
             {
                 finish.Stop();
@@ -69,6 +77,7 @@ internal static class Program
                         {
                             Adapter = window.MonitorStatus, window.SampleCount,
                             window.TotalDown, window.TotalUp,
+                            window.StoredSamples, window.DroppedSamples, window.StorageStatus,
                             WorkingSetMiB = process.WorkingSet64 / 1048576.0,
                             PrivateMiB = process.PrivateMemorySize64 / 1048576.0,
                             CpuPercentOneCore = (process.TotalProcessorTime - startCpu).TotalSeconds / watch.Elapsed.TotalSeconds * 100,

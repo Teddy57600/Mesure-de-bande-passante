@@ -67,7 +67,21 @@ MiniDébit observe le trafic total de la carte, y compris les échanges locaux. 
 
 La **période affichée** règle la vitesse du défilement, indépendamment de l’**actualisation des mesures**. Avec 5 minutes, le graphique défile cinq fois plus lentement qu’avec une minute, tout en continuant de mesurer et d’afficher les débits toutes les 1 000 ms par défaut. Le réglage se trouve dans **Paramètres → Période affichée (min)**. Une période plus longue se remplit progressivement avec les nouvelles mesures ; le programme ne peut pas reconstituer des données déjà supprimées. Lors de la mise à jour, l’ancienne valeur de 60 secondes devient 5 minutes ; une autre période personnalisée et le délai de mesure sont conservés.
 
-L’historique reste en mémoire et sa taille est bornée. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
+Les points du graphique restent en mémoire et leur nombre est borné. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
+
+## Historique SQLite
+
+L’onglet **Historique** permet d’activer l’enregistrement de **chaque mesure**, au délai d’actualisation configuré, et de choisir une conservation de **1 à 90 jours**, avec **7 jours par défaut**. L’enregistrement est activé par défaut. Il continue lorsque le widget est masqué.
+
+![Paramètres de l’historique](docs/settings-history.png)
+
+La base est `%LOCALAPPDATA%\MiniDebit\traffic.sqlite`. La table `measurements` conserve l’horodatage UTC en millisecondes, l’identifiant de session, l’identifiant et le nom de la carte, le délai configuré, la durée réellement mesurée, les octets reçus/envoyés et les débits en octets par seconde. Les volumes proviennent des compteurs de la carte ; aucun contenu de paquet n’est enregistré. Les anciennes données du graphique ne sont pas reconstituées.
+
+Le minuteur ajoute uniquement la mesure à une file bornée de 256 entrées. Un thread dédié écrit des transactions regroupées toutes les 30 secondes environ, ou à 128 mesures ; son cache SQLite est limité à 256 Kio. L’historique complet n’est jamais chargé en mémoire. MiniDébit utilise la [bibliothèque SQLite fournie par Windows](https://learn.microsoft.com/en-us/windows/apps/develop/data-access/sqlite-data-access), sans bibliothèque supplémentaire à installer ou distribuer. Le coût CPU et mémoire reste faible, mais ne peut pas être nul.
+
+La fermeture normale écrit le dernier lot, avec une attente maximale de deux secondes. Un arrêt brutal peut perdre le dernier lot encore en mémoire, soit environ 30 secondes. Une erreur de stockage ou une file saturée laisse la surveillance fonctionner ; l’état et le nombre de mesures perdues sont consultables dans l’onglet Historique. Une erreur de stockage nécessite de corriger sa cause puis de relancer MiniDébit.
+
+La purge des anciennes mesures intervient lors d’une écriture, chaque jour et après un changement de durée. L’espace libéré est réutilisé par SQLite ; le fichier ne rétrécit pas automatiquement. À 1 000 ms, une journée représente environ 86 400 lignes ; à 250 ms, environ 345 600. Désactiver l’historique arrête les nouvelles mesures sans supprimer la base existante. Pour sauvegarder la base, quitter MiniDébit puis copier `traffic.sqlite`.
 
 Pour lancer MiniDébit à l’ouverture de session Windows, placer un raccourci vers l’exécutable dans le dossier ouvert par **Win+R → shell:startup**. Choisir « Dans la zone de notification » dans les paramètres pour un lancement discret. Aucune entrée de démarrage n’est ajoutée automatiquement.
 
@@ -87,7 +101,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -Test
 
 La compilation utilise le SDK 10.0.401 (ou un correctif compatible) et les composants locaux. Aucune bibliothèque NuGet externe n’est utilisée. `MiniDebit.slnx` contient le programme et les tests. `build.ps1` conserve son état de compilation dans `artifacts\build-home` et publie dans `dist\MiniDebit`.
 
-Les tests vérifient les débits, les compteurs remis à zéro, les connexions/déconnexions, le cumul par carte, les unités, les limites et la persistance des paramètres, ainsi qu’une lecture réelle des interfaces Windows.
+Les tests vérifient les débits, les compteurs remis à zéro, les connexions/déconnexions, le cumul par carte, les unités, les limites et la persistance des paramètres, ainsi qu’une lecture réelle des interfaces Windows. Ils vérifient aussi une vraie base SQLite : intégrité, volumes, texte Unicode, annulation d’un lot invalide, purge, écriture à la fermeture et erreur de stockage.
 
 Pour obtenir une capture et un rapport de fonctionnement sans changer les paramètres utilisateur :
 
@@ -101,6 +115,8 @@ Le diagnostic ferme l’application après 32 secondes. Il mesure la mémoire et
 Une capture de la fenêtre des paramètres peut être produite avec `--capture-settings chemin.png`.
 L’onglet Graphique peut être capturé avec `--capture-graph-settings chemin.png`.
 L’onglet Débits peut être capturé avec `--capture-rate-settings chemin.png`.
+L’onglet Historique peut être capturé avec `--capture-history-settings chemin.png`.
+Les diagnostics désactivent l’historique par défaut ; ajouter `--history-db chemin.sqlite` pour tester les écritures dans une base distincte des données utilisateur. `--long-benchmark` prolonge le diagnostic à 72 secondes, dont environ 70 secondes mesurées après démarrage.
 Ajouter `--compact` à un diagnostic pour capturer le widget ou l’onglet Débits en mode compact sans modifier les paramètres utilisateur.
 Ajouter `--capture-hover chemin.png` au diagnostic pour capturer aussi le bandeau affiché au survol, sur le même relevé de trafic.
 

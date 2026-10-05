@@ -115,4 +115,39 @@ Check(Settings.Load(Path.Combine(directory, "absent.json")).AdapterId == "auto",
 var monitor = new NetworkMonitor();
 var live = monitor.Poll("auto");
 Check(live.Down >= 0 && live.Up >= 0 && !string.IsNullOrEmpty(monitor.Status), "Lecture des interfaces Windows réelles");
+var databasePath = Path.Combine(directory, $"history-{Guid.NewGuid():N}.sqlite");
+var databaseNow = DateTimeOffset.UtcNow;
+using (var database = new TrafficDatabase(databasePath))
+{
+    var recorded = new HistoryRow(new Sample(databaseNow, 1200, 600, 2, 2400, 1200), "adapter-test", "Éthernet ' test", 1000);
+    database.Insert([recorded, recorded with { Sample = new Sample(databaseNow.AddDays(-8), 10, 20, 1, 10, 20) }], "session-test");
+    Check(database.Scalar("SELECT COUNT(*) FROM measurements") == 2 && database.Scalar("SELECT SUM(received_bytes) FROM measurements") == 2410,
+        "SQLite stocke les mesures individuelles et les volumes réels");
+    Check(database.ScalarText("PRAGMA integrity_check") == "ok", "L’intégrité SQLite est vérifiée après transaction");
+    Check(database.ScalarText("SELECT adapter_name FROM measurements LIMIT 1") == "Éthernet ' test", "Le nom Unicode de la carte est conservé sans interprétation SQL");
+    bool rolledBack = false;
+    try { database.Insert([recorded, recorded with { AdapterName = null! }], "bad-session"); }
+    catch (InvalidOperationException) { rolledBack = true; }
+    Check(rolledBack && database.Scalar("SELECT COUNT(*) FROM measurements") == 2, "Un lot invalide est entièrement annulé");
+    database.Prune(databaseNow.AddDays(-7).ToUnixTimeMilliseconds());
+    Check(database.Scalar("SELECT COUNT(*) FROM measurements") == 1, "La purge conserve les données récentes");
+}
+var asynchronousPath = Path.Combine(directory, $"async-{Guid.NewGuid():N}.sqlite");
+using (var writer = new HistoryRecorder(asynchronousPath, 50))
+{
+    writer.Configure(new HistorySettings());
+    for (int i = 0; i < 10; i++) writer.Record(new Sample(databaseNow.AddMilliseconds(i * 1000), 100, 50, 1, 100, 50), "adapter", "test", 1000);
+}
+using (var database = new TrafficDatabase(asynchronousPath))
+    Check(database.Scalar("SELECT COUNT(*) FROM measurements") == 10, "La fermeture écrit le dernier lot en attente");
+var disabledPath = Path.Combine(directory, $"disabled-{Guid.NewGuid():N}.sqlite");
+using (var disabled = new HistoryRecorder(disabledPath)) disabled.Configure(new HistorySettings { Enabled = false });
+Check(!File.Exists(disabledPath), "L’historique désactivé ne crée aucune base");
+using (var failed = new HistoryRecorder(directory))
+{
+    failed.Configure(new HistorySettings());
+    failed.Record(new Sample(databaseNow, 100, 100, 1, 100, 100), "adapter", "test", 1000);
+    failed.Dispose();
+    Check(failed.Error is not null, "Une erreur de stockage est signalée sans arrêter les mesures");
+}
 Console.WriteLine($"\n{count} vérifications réussies.");

@@ -6,8 +6,9 @@ public sealed class SettingsForm : Form
     public bool MeasurementChanged { get; private set; }
     internal void SelectGraphTab() => tabs.SelectedIndex = 1;
     internal void SelectRatesTab() => tabs.SelectedIndex = 2;
+    internal void SelectHistoryTab() => tabs.SelectedIndex = 3;
 
-    public SettingsForm(Settings settings, Icon icon)
+    public SettingsForm(Settings settings, Icon icon, Func<string>? storageStatus = null)
     {
         Text = "MiniDébit — Paramètres";
         Icon = icon;
@@ -28,7 +29,8 @@ public sealed class SettingsForm : Form
         var general = new TabPage("Général") { BackColor = BackColor };
         var graph = new TabPage("Graphique") { BackColor = BackColor };
         var ratePage = new TabPage("Débits") { BackColor = BackColor };
-        tabs.TabPages.AddRange([general, graph, ratePage]);
+        var storagePage = new TabPage("Historique") { BackColor = BackColor };
+        tabs.TabPages.AddRange([general, graph, ratePage, storagePage]);
         Controls.Add(tabs);
         ComboBox Choice(params object[] values)
         {
@@ -198,6 +200,20 @@ public sealed class SettingsForm : Form
             RefreshPreview();
         };
         RefreshPreview();
+        var storageTable = Table(storagePage, 2, 40);
+        var storeEnabled = new CheckBox { Text = "Conserver chaque mesure", Checked = settings.Storage.Enabled, Dock = DockStyle.Fill };
+        var retention = Number(1, 90, settings.Storage.RetentionDays);
+        Row(storageTable, 0, "Historique SQLite", storeEnabled);
+        Row(storageTable, 1, "Conservation (jours)", retention);
+        retention.Enabled = storeEnabled.Checked;
+        storeEnabled.CheckedChanged += (_, _) => retention.Enabled = storeEnabled.Checked;
+        storagePage.Controls.Add(new Label { Location = new Point(12, 112), Size = new Size(476, 155), ForeColor = Color.FromArgb(94, 115, 141),
+            Text = "Toutes les mesures sont conservées, à la fréquence configurée.\n\nLes écritures sont regroupées toutes les 30 secondes environ,\nen arrière-plan, avec un tampon borné.\n\nDonnées : horodatage, interface, débits, volumes et durée mesurée.\nLe contenu du trafic n’est pas enregistré." });
+        storagePage.Controls.Add(new Label { Text = "Base locale :", Location = new Point(12, 282), AutoSize = true });
+        storagePage.Controls.Add(new TextBox { Text = HistorySettings.DatabasePath, ReadOnly = true, Location = new Point(12, 309), Size = new Size(476, 28) });
+        var storageInfo = new Label { Location = new Point(12, 353), Size = new Size(476, 100), Text = storageStatus?.Invoke() ?? "État disponible dans l’application en fonctionnement." };
+        storagePage.Controls.Add(storageInfo);
+        tabs.SelectedIndexChanged += (_, _) => { if (tabs.SelectedTab == storagePage && storageStatus is not null) storageInfo.Text = storageStatus(); };
         var save = new Button { Text = "Enregistrer", Location = new Point(402, 639), Size = new Size(134, 34), BackColor = Color.FromArgb(21, 110, 137), ForeColor = Color.White, FlatStyle = FlatStyle.Flat };
         var cancel = new Button { Text = "Annuler", Location = new Point(288, 639), Size = new Size(104, 34), DialogResult = DialogResult.Cancel };
         Controls.AddRange([save, cancel]);
@@ -217,6 +233,8 @@ public sealed class SettingsForm : Form
             settings.StartHidden = hidden.Checked;
             settings.Graph = ReadAppearance();
             settings.Rates = ReadRates();
+            settings.Storage.Enabled = storeEnabled.Checked;
+            settings.Storage.RetentionDays = (int)retention.Value;
             DialogResult = DialogResult.OK;
         };
     }

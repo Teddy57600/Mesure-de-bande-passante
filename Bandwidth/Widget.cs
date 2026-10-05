@@ -10,6 +10,7 @@ public sealed class Widget : Form
     private readonly Settings settings;
     private readonly bool diagnostic;
     private readonly NetworkMonitor monitor = new();
+    private readonly HistoryRecorder recorder;
     private readonly Queue<Sample> history = new();
     private readonly System.Windows.Forms.Timer timer = new();
     private readonly NotifyIcon tray;
@@ -34,6 +35,9 @@ public sealed class Widget : Form
     public int SampleCount { get; private set; }
     public double TotalDown => monitor.TotalDown;
     public double TotalUp => monitor.TotalUp;
+    public string StorageStatus => recorder.Status;
+    public long StoredSamples => recorder.Stored;
+    public long DroppedSamples => recorder.Dropped;
     private float DpiScale => DeviceDpi / 96f;
     private float LogicalWidth => ClientSize.Width / DpiScale;
     private float LogicalHeight => ClientSize.Height / DpiScale;
@@ -45,10 +49,11 @@ public sealed class Widget : Form
     private Color DownColor => settings.Graph.Reception;
     private Color UpColor => settings.Graph.Sending;
 
-    public Widget(Settings settings, bool diagnostic = false)
+    public Widget(Settings settings, bool diagnostic = false, string? historyPath = null)
     {
         this.settings = settings;
         this.diagnostic = diagnostic;
+        recorder = new HistoryRecorder(historyPath);
         Text = "MiniDébit";
         FormBorderStyle = FormBorderStyle.None;
         StartPosition = FormStartPosition.Manual;
@@ -101,6 +106,7 @@ public sealed class Widget : Form
     private void ApplySettings()
     {
         settings.Normalize();
+        recorder.Configure(settings.Storage);
         var numbers = settings.Rates.CreateFont();
         var captions = settings.Rates.CreateFont(true);
         rateFont.Dispose(); labelFont.Dispose();
@@ -115,6 +121,7 @@ public sealed class Widget : Form
     private void Tick()
     {
         current = monitor.Poll(settings.AdapterId);
+        recorder.Record(current, monitor.ActiveAdapterKey, monitor.Status, settings.IntervalMs);
         SampleCount++;
         history.Enqueue(current);
         int maxSamples = (int)Math.Ceiling(settings.HistorySeconds * 1000.0 / settings.IntervalMs) + 2;
@@ -335,7 +342,7 @@ public sealed class Widget : Form
 
     private void OpenSettings()
     {
-        using var dialog = new SettingsForm(settings, ownedIcon!);
+        using var dialog = new SettingsForm(settings, ownedIcon!, () => recorder.Status);
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
         if (dialog.MeasurementChanged) ResetMeasurements();
         ApplySettings();
@@ -369,6 +376,7 @@ public sealed class Widget : Form
     protected override void OnFormClosing(FormClosingEventArgs e)
     {
         timer.Stop();
+        recorder.Dispose();
         SaveSettings();
         base.OnFormClosing(e);
     }
@@ -378,6 +386,7 @@ public sealed class Widget : Form
         if (disposing)
         {
             timer.Dispose(); tray.Dispose(); menu.Dispose(); tooltip.Dispose();
+            recorder.Dispose();
             titleFont.Dispose(); smallFont.Dispose(); rateFont.Dispose(); labelFont.Dispose(); arrowFont.Dispose(); ownedIcon?.Dispose();
         }
         base.Dispose(disposing);
