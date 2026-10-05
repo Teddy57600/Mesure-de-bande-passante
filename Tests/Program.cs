@@ -67,6 +67,43 @@ Check(longHistory.HistorySeconds == 3600 && longHistory.IntervalMs == 1000,
     "Une heure de graphique conserve les mesures toutes les 1000 ms");
 Check(Units.Duration(15) == "15 s" && Units.Duration(300) == "5 min" && Units.Duration(3600) == "1 h",
     "Affichage lisible des périodes en secondes, minutes et heures");
+File.WriteAllText(path, "{\"ConfigurationVersion\":1,\"HistorySeconds\":300,\"IntervalMs\":1000}");
+var legacyAppearance = Settings.Load(path);
+Check(legacyAppearance.Graph.DownColor == GraphAppearance.DefaultDown && legacyAppearance.Graph.LineWidth == 1.4,
+    "Une configuration existante conserve l’apparence d’origine");
+legacyAppearance.Graph = new GraphAppearance { DownColor = "#C040D0", UpColor = "#208020", BackgroundColor = "#FFFFFF",
+    GridColor = "#777777", LineWidth = 3.5, LineStyle = 2, GridStyle = 0, ShowGrid = false, FillArea = false, FillOpacityPercent = 42 };
+legacyAppearance.Save(path);
+var styled = Settings.Load(path);
+Check(styled.Graph.DownColor == "#C040D0" && styled.Graph.BackgroundColor == "#FFFFFF" && styled.Graph.LineWidth == 3.5 &&
+    styled.Graph.LineStyle == 2 && !styled.Graph.ShowGrid && !styled.Graph.FillArea && styled.Graph.FillOpacityPercent == 42 && styled.IntervalMs == 1000,
+    "Les couleurs et styles sont mémorisés indépendamment des mesures");
+File.WriteAllText(path, "{\"Graph\":{\"DownColor\":\"invalide\",\"BackgroundColor\":\"oops\",\"LineWidth\":100,\"FillOpacityPercent\":-10}}");
+var repaired = Settings.Load(path);
+Check(repaired.Graph.DownColor == GraphAppearance.DefaultDown && repaired.Graph.BackgroundColor == "" &&
+    repaired.Graph.LineWidth == 6 && repaired.Graph.FillOpacityPercent == 0,
+    "Une apparence JSON invalide est corrigée sans bloquer le widget");
+File.WriteAllText(path, "{\"Graph\":null}");
+Check(Settings.Load(path).Graph is not null, "Une apparence absente restaure les valeurs par défaut");
+var rateDefaults = new Settings();
+rateDefaults.Graph.BackgroundColor = "#112233";
+Check(rateDefaults.Rates.Background(rateDefaults.Graph, false).ToArgb() == System.Drawing.Color.FromArgb(17, 34, 51).ToArgb(),
+    "Le fond du bandeau suit le graphique par défaut");
+rateDefaults.Graph.BackgroundColor = "#AABBCC";
+Check(rateDefaults.Rates.Background(rateDefaults.Graph, true).ToArgb() == System.Drawing.Color.FromArgb(170, 187, 204).ToArgb(),
+    "Le fond automatique suit les changements de couleur du graphique");
+rateDefaults.Rates = new RateAppearance { BackgroundColor = "#102030", TextColor = "#EEDDCC", FontFamily = "Consolas", FontSizePixels = 20, Style = 3 };
+rateDefaults.Save(path);
+var rateSaved = Settings.Load(path);
+Check(rateSaved.Rates.BackgroundColor == "#102030" && rateSaved.Rates.TextColor == "#EEDDCC" &&
+    rateSaved.Rates.FontFamily == "Consolas" && rateSaved.Rates.FontSizePixels == 20 && rateSaved.Rates.Style == 3 && rateSaved.IntervalMs == 1000,
+    "Le fond, la couleur du texte et la police sont mémorisés indépendamment des mesures");
+Check(rateSaved.Rates.Background(rateSaved.Graph, true).ToArgb() == System.Drawing.Color.FromArgb(16, 32, 48).ToArgb(),
+    "Une couleur explicite du bandeau reste indépendante du graphique");
+var unavailableFont = new RateAppearance { FontFamily = "MiniDebit police absente 123456", FontSizePixels = 18 };
+using (var replacement = unavailableFont.CreateFont()) Check(replacement.Name == "Segoe UI", "Une police absente utilise Segoe UI");
+File.WriteAllText(path, "{\"Rates\":null}");
+Check(Settings.Load(path).Rates is not null, "Une ancienne configuration reçoit les réglages par défaut du bandeau");
 File.WriteAllText(path, "{invalide");
 Check(Settings.Load(path).IntervalMs == 1000, "Un fichier JSON corrompu restaure les valeurs par défaut");
 Check(Settings.Load(Path.Combine(directory, "absent.json")).AdapterId == "auto", "Première ouverture sans configuration");

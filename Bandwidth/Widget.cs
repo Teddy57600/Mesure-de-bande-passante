@@ -17,8 +17,9 @@ public sealed class Widget : Form
     private readonly ToolTip tooltip = new();
     private readonly Font titleFont = new("Segoe UI", 12, FontStyle.Bold, GraphicsUnit.Pixel);
     private readonly Font smallFont = new("Segoe UI", 10, FontStyle.Regular, GraphicsUnit.Pixel);
-    private readonly Font rateFont = new("Segoe UI", 18, FontStyle.Bold, GraphicsUnit.Pixel);
-    private readonly Font labelFont = new("Segoe UI", 9, FontStyle.Bold, GraphicsUnit.Pixel);
+    private Font rateFont = new("Segoe UI", 18, FontStyle.Bold, GraphicsUnit.Pixel);
+    private Font labelFont = new("Segoe UI", 9, FontStyle.Bold, GraphicsUnit.Pixel);
+    private readonly Font arrowFont = new("Segoe UI", 18, FontStyle.Bold, GraphicsUnit.Pixel);
     private Icon? ownedIcon;
     private Sample current;
     private int hover = -1;
@@ -40,8 +41,8 @@ public sealed class Widget : Form
     private Color Foreground => settings.Dark ? Color.FromArgb(233, 240, 250) : Color.FromArgb(27, 42, 61);
     private Color Muted => settings.Dark ? Color.FromArgb(145, 161, 184) : Color.FromArgb(94, 115, 141);
     private Color Grid => settings.Dark ? Color.FromArgb(42, 53, 70) : Color.FromArgb(215, 226, 239);
-    private static readonly Color DownColor = Color.FromArgb(69, 204, 230);
-    private static readonly Color UpColor = Color.FromArgb(255, 174, 90);
+    private Color DownColor => settings.Graph.Reception;
+    private Color UpColor => settings.Graph.Sending;
 
     public Widget(Settings settings, bool diagnostic = false)
     {
@@ -99,6 +100,10 @@ public sealed class Widget : Form
     private void ApplySettings()
     {
         settings.Normalize();
+        var numbers = settings.Rates.CreateFont();
+        var captions = settings.Rates.CreateFont(true);
+        rateFont.Dispose(); labelFont.Dispose();
+        rateFont = numbers; labelFont = captions;
         TopMost = settings.AlwaysOnTop;
         Opacity = settings.OpacityPercent / 100.0;
         timer.Interval = settings.IntervalMs;
@@ -182,29 +187,11 @@ public sealed class Widget : Form
             DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, chartTop - 16, 160, 14));
             DrawText(g, Units.Duration(settings.HistorySeconds), smallFont, Muted, new RectangleF(w - 84, chartTop - 16, 71, 14), StringAlignment.Far);
         }
-        using (var gridPen = new Pen(Grid, .6f) { DashStyle = DashStyle.Dot })
-        {
-            for (int i = 0; i <= 4; i++)
-            {
-                float y = chart.Top + chart.Height * i / 4;
-                g.DrawLine(gridPen, chart.Left, y, chart.Right, y);
-            }
-            for (int i = 0; i <= 8; i++)
-            {
-                float x = chart.Left + chart.Width * i / 8;
-                g.DrawLine(gridPen, x, chart.Top, x, chart.Bottom);
-            }
-        }
+        GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
-        g.DrawLine(border, 13, h - 49, w - 13, h - 49);
-        DrawText(g, "↓", rateFont, DownColor, new RectangleF(13, h - 44, 20, 27));
-        DrawText(g, Units.Rate(current.Down, settings.Bits), rateFont, Foreground, new RectangleF(35, h - 45, w / 2 - 45, 27));
-        DrawText(g, "RÉCEPTION", labelFont, Muted, new RectangleF(35, h - 21, w / 2 - 45, 13));
-        g.DrawLine(border, w / 2, h - 42, w / 2, h - 12);
-        DrawText(g, "↑", rateFont, UpColor, new RectangleF(w / 2 + 10, h - 44, 20, 27));
-        DrawText(g, Units.Rate(current.Up, settings.Bits), rateFont, Foreground, new RectangleF(w / 2 + 32, h - 45, w / 2 - 42, 27));
-        DrawText(g, "ENVOI", labelFont, Muted, new RectangleF(w / 2 + 32, h - 21, w / 2 - 42, 13));
+        RateRenderer.Draw(g, new RectangleF(1, h - 49, w - 2, 48), Units.Rate(current.Down, settings.Bits),
+            Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         using var grip = new Pen(Muted, 1);
         g.DrawLine(grip, w - 8, h - 4, w - 4, h - 8);
         g.DrawLine(grip, w - 12, h - 4, w - 4, h - 12);
@@ -240,15 +227,7 @@ public sealed class Widget : Form
             float y = chart.Bottom - (float)Math.Clamp(rate / scale, 0, 1) * chart.Height;
             points[i++] = new PointF(Math.Clamp(x, chart.Left, chart.Right), y);
         }
-        using var path = new GraphicsPath();
-        path.AddLines(points);
-        path.AddLine(points[^1], new PointF(points[^1].X, chart.Bottom));
-        path.AddLine(new PointF(points[^1].X, chart.Bottom), new PointF(points[0].X, chart.Bottom));
-        path.CloseFigure();
-        using var fill = new SolidBrush(Color.FromArgb(35, color));
-        using var line = new Pen(color, 1.4f);
-        g.FillPath(fill, path);
-        g.DrawLines(line, points);
+        GraphRenderer.Curve(g, chart, points, color, settings.Graph);
     }
 
     private int ButtonAt(Point point)
@@ -397,7 +376,7 @@ public sealed class Widget : Form
         if (disposing)
         {
             timer.Dispose(); tray.Dispose(); menu.Dispose(); tooltip.Dispose();
-            titleFont.Dispose(); smallFont.Dispose(); rateFont.Dispose(); labelFont.Dispose(); ownedIcon?.Dispose();
+            titleFont.Dispose(); smallFont.Dispose(); rateFont.Dispose(); labelFont.Dispose(); arrowFont.Dispose(); ownedIcon?.Dispose();
         }
         base.Dispose(disposing);
     }
@@ -409,8 +388,8 @@ public sealed class Widget : Form
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(Color.FromArgb(20, 26, 36));
-            using var down = new Pen(DownColor, 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            using var up = new Pen(UpColor, 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var down = new Pen(GraphAppearance.Resolve(GraphAppearance.DefaultDown, Color.Cyan), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            using var up = new Pen(GraphAppearance.Resolve(GraphAppearance.DefaultUp, Color.Orange), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
             g.DrawLines(down, [new(5, 19), new(10, 25), new(15, 19)]);
             g.DrawLine(down, 10, 7, 10, 24);
             g.DrawLines(up, [new(18, 13), new(23, 7), new(28, 13)]);

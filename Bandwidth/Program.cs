@@ -12,18 +12,23 @@ internal static class Program
         var capture = Argument(args, "--capture");
         var captureHover = Argument(args, "--capture-hover");
         var captureSettings = Argument(args, "--capture-settings");
+        var captureGraphSettings = Argument(args, "--capture-graph-settings");
+        var captureRateSettings = Argument(args, "--capture-rate-settings");
         var report = Argument(args, "--smoke-report");
-        if (captureSettings is not null)
+        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null)
         {
             using var dialog = new SettingsForm(new Settings(), SystemIcons.Application);
+            if (captureGraphSettings is not null) dialog.SelectGraphTab();
+            if (captureRateSettings is not null) dialog.SelectRatesTab();
+            var settingsCapturePath = captureRateSettings ?? captureGraphSettings ?? captureSettings!;
             using var close = new System.Windows.Forms.Timer { Interval = 1000 };
             close.Tick += (_, _) =>
             {
                 close.Stop();
-                Directory.CreateDirectory(Path.GetDirectoryName(captureSettings)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(settingsCapturePath)!);
                 using var bitmap = new Bitmap(dialog.Width, dialog.Height);
                 dialog.DrawToBitmap(bitmap, new Rectangle(0, 0, dialog.Width, dialog.Height));
-                bitmap.Save(captureSettings, System.Drawing.Imaging.ImageFormat.Png);
+                bitmap.Save(settingsCapturePath, System.Drawing.Imaging.ImageFormat.Png);
                 dialog.Close();
             };
             close.Start();

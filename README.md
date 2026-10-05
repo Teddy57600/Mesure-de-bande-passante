@@ -33,6 +33,16 @@ La position, les dimensions et les paramètres sont mémorisés dans `%LOCALAPPD
 
 ![Paramètres](docs/settings.png)
 
+L’onglet **Général** regroupe les paramètres de mesure et du widget. L’onglet **Graphique** permet de personnaliser les couleurs de réception, d’envoi, du fond et de la grille, l’épaisseur des courbes (0,5 à 6 px), leur style (continu, pointillé ou tirets), la présence et le style de la grille, ainsi que le remplissage et son opacité (0 à 100 %). « Auto (thème) » fait suivre au fond et à la grille le thème clair ou sombre.
+
+![Apparence du graphique](docs/settings-graph.png)
+
+L’aperçu réagit aux réglages avant leur enregistrement et utilise des données d’exemple. **Enregistrer** applique et mémorise les changements ; **Annuler** laisse l’apparence du widget intacte. **Rétablir l’apparence par défaut** ne remet à zéro que les réglages du graphique, après enregistrement.
+
+L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police (famille, taille et style) et couleur du texte des valeurs et des libellés Réception / Envoi. **Fond graphique**, activé par défaut, reprend automatiquement la couleur du graphique, y compris ses changements ultérieurs. **Auto (contraste)** adapte la couleur du texte au fond ; une couleur personnalisée peut aussi être choisie. Les flèches gardent les couleurs des courbes. L’aperçu permet de contrôler le rendu avant d’enregistrer. Une police absente sur un autre ordinateur est remplacée par Segoe UI.
+
+![Apparence du bandeau des débits](docs/settings-rates.png)
+
 | Réglage | Valeurs |
 |---|---|
 | Carte réseau | Automatique, carte précise ou cumul des cartes actives |
@@ -85,6 +95,8 @@ New-Item -ItemType Directory -Path artifacts -Force | Out-Null
 Le diagnostic ferme l’application après 32 secondes. Il mesure la mémoire et le temps CPU pendant environ 30 secondes après une phase de démarrage de 2 secondes. Le pourcentage CPU est exprimé par rapport à **un cœur**, pas à l’ensemble du processeur. Ces mesures varient selon l’ordinateur, le DPI, l’intervalle, la taille du graphique et le trafic.
 
 Une capture de la fenêtre des paramètres peut être produite avec `--capture-settings chemin.png`.
+L’onglet Graphique peut être capturé avec `--capture-graph-settings chemin.png`.
+L’onglet Débits peut être capturé avec `--capture-rate-settings chemin.png`.
 Ajouter `--capture-hover chemin.png` au diagnostic pour capturer aussi le bandeau affiché au survol, sur le même relevé de trafic.
 
 Les compteurs sont lus avec l’API Windows exposée par [.NET NetworkInterface.GetIPStatistics](https://learn.microsoft.com/en-us/dotnet/api/system.net.networkinformation.networkinterface.getipstatistics). Le temps entre relevés est mesuré par une horloge monotone ; l’ajout, le retrait ou la remise à zéro des compteurs d’une carte ne produit pas de pic artificiel.

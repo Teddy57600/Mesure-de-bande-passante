@@ -14,6 +14,8 @@ public sealed class Settings
     public bool StartHidden { get; set; }
     public int OpacityPercent { get; set; } = 100;
     public double FixedScaleMbps { get; set; }
+    public GraphAppearance Graph { get; set; } = new();
+    public RateAppearance Rates { get; set; } = new();
     public int Width { get; set; } = 340;
     public int Height { get; set; } = 176;
     public int? X { get; set; }
@@ -35,6 +37,10 @@ public sealed class Settings
         FixedScaleMbps = double.IsFinite(FixedScaleMbps) ? Math.Clamp(FixedScaleMbps, 0, 100000) : 0;
         Width = Math.Clamp(Width, 270, 1000);
         Height = Math.Clamp(Height, 145, 600);
+        Graph ??= new GraphAppearance();
+        Graph.Normalize();
+        Rates ??= new RateAppearance();
+        Rates.Normalize();
     }
 
     public static Settings Load(string? path = null)
