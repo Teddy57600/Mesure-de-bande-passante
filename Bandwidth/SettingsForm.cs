@@ -73,7 +73,7 @@ public sealed class SettingsForm : Form
         general.Controls.Add(new Label { Location = new Point(12, 343), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\n\nLe cumul peut compter deux fois le trafic d’un VPN.\nPour une mesure précise, choisissez une seule carte réseau." });
 
         var appearance = settings.Graph;
-        var graphTable = Table(graph, 10, 30);
+        var graphTable = Table(graph, 11, 30);
         var down = new ColorField(appearance.DownColor, appearance.Reception);
         var up = new ColorField(appearance.UpColor, appearance.Sending);
         var background = new ColorField(appearance.BackgroundColor, appearance.Background(settings.Dark), true);
@@ -94,14 +94,16 @@ public sealed class SettingsForm : Form
         Row(graphTable, 8, "Remplissage", fill);
         var fillOpacity = Number(0, 100, appearance.FillOpacityPercent, 1);
         Row(graphTable, 9, "Opacité du remplissage (%)", fillOpacity);
+        var showMaximum = new CheckBox { Text = "Ligne et valeur du maximum", Checked = appearance.ShowMaximum, Dock = DockStyle.Fill };
+        Row(graphTable, 10, "Maximum de la période", showMaximum);
         GraphAppearance ReadAppearance() => new()
         {
             DownColor = down.Value, UpColor = up.Value, BackgroundColor = background.Value, GridColor = gridColor.Value,
             LineWidth = (double)thickness.Value, LineStyle = lineStyle.SelectedIndex, ShowGrid = showGrid.Checked,
-            GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value
+            GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value, ShowMaximum = showMaximum.Checked
         };
-        graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 328), AutoSize = true });
-        var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 350), Size = new Size(476, 110) };
+        graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 350), AutoSize = true });
+        var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 374), Size = new Size(476, 90) };
         graph.Controls.Add(preview);
         var rateTable = Table(ratePage, 4, 40);
         var rateBackground = new ColorField(settings.Rates.BackgroundColor, settings.Rates.Background(settings.Graph, settings.Dark), true, "Fond graphique");
@@ -180,6 +182,7 @@ public sealed class SettingsForm : Form
         gridStyle.SelectedIndexChanged += (_, _) => RefreshPreview();
         showGrid.CheckedChanged += (_, _) => RefreshPreview();
         fill.CheckedChanged += (_, _) => RefreshPreview();
+        showMaximum.CheckedChanged += (_, _) => RefreshPreview();
         theme.SelectedIndexChanged += (_, _) => RefreshPreview();
         var reset = new Button { Text = "Rétablir l’apparence par défaut", Location = new Point(12, 474), Size = new Size(256, 28) };
         graph.Controls.Add(reset);
@@ -191,6 +194,7 @@ public sealed class SettingsForm : Form
             thickness.Value = (decimal)defaults.LineWidth; lineStyle.SelectedIndex = defaults.LineStyle;
             showGrid.Checked = defaults.ShowGrid; gridStyle.SelectedIndex = defaults.GridStyle;
             fill.Checked = defaults.FillArea; fillOpacity.Value = defaults.FillOpacityPercent;
+            showMaximum.Checked = defaults.ShowMaximum;
             RefreshPreview();
         };
         RefreshPreview();

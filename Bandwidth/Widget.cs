@@ -29,6 +29,7 @@ public sealed class Widget : Form
     private Point resizeOrigin;
     private Size resizeSize;
     private double scale = 125000;
+    private TrafficPeak visiblePeak;
     public string MonitorStatus => monitor.Status;
     public int SampleCount { get; private set; }
     public double TotalDown => monitor.TotalDown;
@@ -119,12 +120,11 @@ public sealed class Widget : Form
         int maxSamples = (int)Math.Ceiling(settings.HistorySeconds * 1000.0 / settings.IntervalMs) + 2;
         while (history.Count > maxSamples || (history.Count > 0 && (current.Time - history.Peek().Time).TotalSeconds > settings.HistorySeconds))
             history.Dequeue();
+        visiblePeak = TrafficPeak.InWindow(history, current.Time, settings.HistorySeconds);
         if (settings.FixedScaleMbps > 0) scale = settings.FixedScaleMbps * 125000;
         else
         {
-            double peak = 1000;
-            foreach (var sample in history) peak = Math.Max(peak, Math.Max(sample.Down, sample.Up));
-            scale = NiceCeiling(peak * 1.12);
+            scale = NiceCeiling(Math.Max(1000, visiblePeak.Rate) * 1.12);
         }
         if (++tickCount % 2 == 0)
         {
@@ -191,6 +191,7 @@ public sealed class Widget : Form
         GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
+        GraphRenderer.Maximum(g, chart, settings.Graph, settings.Dark, visiblePeak, scale, settings.Bits);
         RateRenderer.Draw(g, new RectangleF(1, h - rateHeight - 1, w - 2, rateHeight), Units.Rate(current.Down, settings.Bits),
             Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         using var grip = new Pen(Muted, 1);

@@ -8,6 +8,11 @@ void Check(bool condition, string description)
     Console.WriteLine($"OK {++count:00} — {description}");
 }
 var now = DateTimeOffset.Now;
+Sample[] peakSamples = [new(now.AddSeconds(-61), 900000, 0), new(now.AddSeconds(-55), 12000, 8000), new(now.AddSeconds(-1), 5000, 20000)];
+var peakNow = TrafficPeak.InWindow(peakSamples, now, 60);
+Check(peakNow.Rate == 20000 && !peakNow.Reception, "Le maximum couvre uniquement la période visible, réception et envoi comparés");
+var peakLater = TrafficPeak.InWindow(peakSamples, now.AddSeconds(60), 60);
+Check(peakLater.Rate == 0, "Les anciens pics disparaissent du maximum lorsque leur période expire");
 var rates = new RateAccumulator();
 var first = rates.Update([new("a", 10000, 20000)], 1, now);
 Check(first.Down == 0 && first.Up == 0, "Le premier relevé est une référence, pas un débit");

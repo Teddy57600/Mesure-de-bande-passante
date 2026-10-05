@@ -37,6 +37,8 @@ L’onglet **Général** regroupe les paramètres de mesure et du widget. L’on
 
 ![Apparence du graphique](docs/settings-graph.png)
 
+Le graphique affiche une ligne horizontale en tirets au niveau du **maximum observé sur la période visible**, avec la valeur juste au-dessus. La flèche et la couleur indiquent si ce pic vient de la réception (↓) ou de l’envoi (↑) ; les deux débits sont comparés, sans les additionner. Le maximum baisse lorsque les anciens pics sortent de la période. Il utilise les mêmes unités que le widget et reste visible hors survol. **Graphique → Maximum de la période** permet de masquer ou d’afficher ce repère. Si le maximum dépasse une échelle fixe, la ligne reste au plafond et la valeur exacte porte la mention « hors échelle ».
+
 L’aperçu réagit aux réglages avant leur enregistrement et utilise des données d’exemple. **Enregistrer** applique et mémorise les changements ; **Annuler** laisse l’apparence du widget intacte. **Rétablir l’apparence par défaut** ne remet à zéro que les réglages du graphique, après enregistrement.
 
 L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police (famille, taille et style) et couleur du texte des valeurs et des libellés Réception / Envoi. **Fond graphique**, activé par défaut, reprend automatiquement la couleur du graphique, y compris ses changements ultérieurs. **Auto (contraste)** adapte la couleur du texte au fond ; une couleur personnalisée peut aussi être choisie. Les flèches gardent les couleurs des courbes. L’aperçu permet de contrôler le rendu avant d’enregistrer. Une police absente sur un autre ordinateur est remplacée par Segoe UI.

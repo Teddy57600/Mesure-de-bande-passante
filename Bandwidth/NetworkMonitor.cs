@@ -9,6 +9,21 @@ public sealed record AdapterChoice(string Id, string Name)
 }
 public readonly record struct Counters(string Id, long Received, long Sent);
 public readonly record struct Sample(DateTimeOffset Time, double Down, double Up);
+public readonly record struct TrafficPeak(double Rate, bool Reception)
+{
+    public static TrafficPeak InWindow(IEnumerable<Sample> samples, DateTimeOffset now, int seconds)
+    {
+        var start = now.AddSeconds(-seconds);
+        var peak = new TrafficPeak(0, true);
+        foreach (var sample in samples)
+        {
+            if (sample.Time < start || sample.Time > now) continue;
+            if (sample.Down > peak.Rate) peak = new(sample.Down, true);
+            if (sample.Up > peak.Rate) peak = new(sample.Up, false);
+        }
+        return peak;
+    }
+}
 
 // Compute differences per adapter: adding/removing an interface never creates a false spike.
 public sealed class RateAccumulator
