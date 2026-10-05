@@ -4,6 +4,10 @@ Petit widget Windows de surveillance du trafic réseau, inspiré de la capture f
 
 ![Widget en fonctionnement](docs/widget.png)
 
+Au survol :
+
+![Widget survolé](docs/widget-hover.png)
+
 ## Lancer
 
 Double-cliquer sur **Lancer.cmd**, ou sur **dist\MiniDebit\MiniDebit.exe**. Garder les fichiers du dossier `dist\MiniDebit` ensemble.
@@ -15,6 +19,7 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 ## Utilisation
 
 - **Glisser la fenêtre** pour la déplacer ; tirer son coin inférieur droit pour la redimensionner.
+- Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère 52 pixels de hauteur ; les débits restent visibles en bas.
 - **Roue dentée**, **double-clic** ou **clic droit → Paramètres** : configurer le widget.
 - **−** ou **Échap** : masquer le widget dans la zone de notification près de l’horloge. Son icône peut se trouver dans le menu des icônes masquées de Windows.
 - **Double-clic sur l’icône** : afficher le widget.
@@ -78,5 +83,6 @@ New-Item -ItemType Directory -Path artifacts -Force | Out-Null
 Le diagnostic ferme l’application après 32 secondes. Il mesure la mémoire et le temps CPU pendant environ 30 secondes après une phase de démarrage de 2 secondes. Le pourcentage CPU est exprimé par rapport à **un cœur**, pas à l’ensemble du processeur. Ces mesures varient selon l’ordinateur, le DPI, l’intervalle, la taille du graphique et le trafic.
 
 Une capture de la fenêtre des paramètres peut être produite avec `--capture-settings chemin.png`.
+Ajouter `--capture-hover chemin.png` au diagnostic pour capturer aussi le bandeau affiché au survol, sur le même relevé de trafic.
 
 Les compteurs sont lus avec l’API Windows exposée par [.NET NetworkInterface.GetIPStatistics](https://learn.microsoft.com/en-us/dotnet/api/system.net.networkinformation.networkinterface.getipstatistics). Le temps entre relevés est mesuré par une horloge monotone ; l’ajout, le retrait ou la remise à zéro des compteurs d’une carte ne produit pas de pic artificiel.

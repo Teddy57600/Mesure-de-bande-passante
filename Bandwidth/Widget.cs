@@ -22,6 +22,7 @@ public sealed class Widget : Form
     private Icon? ownedIcon;
     private Sample current;
     private int hover = -1;
+    private bool pointerInside;
     private int tickCount;
     private bool resizing;
     private Point resizeOrigin;
@@ -34,6 +35,7 @@ public sealed class Widget : Form
     private float DpiScale => DeviceDpi / 96f;
     private float LogicalWidth => ClientSize.Width / DpiScale;
     private float LogicalHeight => ClientSize.Height / DpiScale;
+    private bool HeaderVisible => pointerInside || resizing;
     private Color Background => settings.Dark ? Color.FromArgb(20, 26, 36) : Color.FromArgb(246, 249, 253);
     private Color Foreground => settings.Dark ? Color.FromArgb(233, 240, 250) : Color.FromArgb(27, 42, 61);
     private Color Muted => settings.Dark ? Color.FromArgb(145, 161, 184) : Color.FromArgb(94, 115, 141);
@@ -123,7 +125,7 @@ public sealed class Widget : Form
         {
             var text = $"MiniDébit · ↓ {Units.Rate(current.Down, settings.Bits)} · ↑ {Units.Rate(current.Up, settings.Bits)}";
             tray.Text = text.Length > 63 ? text[..63] : text;
-            tooltip.SetToolTip(this, $"{monitor.Status}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nClic droit ou double-clic : paramètres");
+            tooltip.SetToolTip(this, $"{monitor.Status}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Historique : {settings.HistorySeconds} s\nClic droit ou double-clic : paramètres");
         }
         if (Visible) Invalidate();
     }
@@ -133,6 +135,23 @@ public sealed class Widget : Form
         var power = Math.Pow(10, Math.Floor(Math.Log10(Math.Max(1, value))));
         var ratio = value / power;
         return (ratio <= 1 ? 1 : ratio <= 2 ? 2 : ratio <= 5 ? 5 : 10) * power;
+    }
+
+    internal void CapturePreview(string path, bool hovered)
+    {
+        bool previous = pointerInside;
+        try
+        {
+            if (hovered) OnMouseEnter(EventArgs.Empty); else OnMouseLeave(EventArgs.Empty);
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            using var bitmap = new Bitmap(ClientSize.Width, ClientSize.Height);
+            DrawToBitmap(bitmap, ClientRectangle);
+            bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+        }
+        finally
+        {
+            if (previous) OnMouseEnter(EventArgs.Empty); else OnMouseLeave(EventArgs.Empty);
+        }
     }
 
     protected override void OnPaint(PaintEventArgs e)
@@ -146,16 +165,23 @@ public sealed class Widget : Form
         g.FillRectangle(back, 0, 0, w, h);
         using var border = new Pen(Grid);
         g.DrawRectangle(border, .5f, .5f, w - 1, h - 1);
-        using var accent = new SolidBrush(DownColor);
-        g.FillEllipse(accent, 13, 14, 6, 6);
-        DrawText(g, "MINIDÉBIT", titleFont, Foreground, new RectangleF(25, 8, 105, 20));
-        DrawText(g, monitor.Status, smallFont, Muted, new RectangleF(13, 30, w - 26, 16));
-        DrawButton(g, 0, "⚙", w - 81);
-        DrawButton(g, 1, "−", w - 55);
-        DrawButton(g, 2, "×", w - 29);
-        var chart = new RectangleF(13, 65, w - 26, h - 122);
-        DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, 49, 160, 14));
-        DrawText(g, $"{settings.HistorySeconds} s", smallFont, Muted, new RectangleF(w - 64, 49, 51, 14), StringAlignment.Far);
+        if (HeaderVisible)
+        {
+            using var accent = new SolidBrush(DownColor);
+            g.FillEllipse(accent, 13, 14, 6, 6);
+            DrawText(g, "MINIDÉBIT", titleFont, Foreground, new RectangleF(25, 8, 105, 20));
+            DrawText(g, monitor.Status, smallFont, Muted, new RectangleF(13, 30, w - 26, 16));
+            DrawButton(g, 0, "⚙", w - 81);
+            DrawButton(g, 1, "−", w - 55);
+            DrawButton(g, 2, "×", w - 29);
+        }
+        float chartTop = HeaderVisible ? 65 : 13;
+        var chart = new RectangleF(13, chartTop, w - 26, h - chartTop - 57);
+        if (HeaderVisible)
+        {
+            DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, chartTop - 16, 160, 14));
+            DrawText(g, $"{settings.HistorySeconds} s", smallFont, Muted, new RectangleF(w - 64, chartTop - 16, 51, 14), StringAlignment.Far);
+        }
         using (var gridPen = new Pen(Grid, .6f) { DashStyle = DashStyle.Dot })
         {
             for (int i = 0; i <= 4; i++)
@@ -227,6 +253,7 @@ public sealed class Widget : Form
 
     private int ButtonAt(Point point)
     {
+        if (!HeaderVisible) return -1;
         var x = point.X / DpiScale;
         var y = point.Y / DpiScale;
         if (y < 6 || y > 30) return -1;
@@ -241,6 +268,7 @@ public sealed class Widget : Form
     protected override void OnMouseMove(MouseEventArgs e)
     {
         base.OnMouseMove(e);
+        if (!pointerInside) { pointerInside = true; Invalidate(); }
         if (resizing)
         {
             var position = MousePosition;
@@ -253,7 +281,28 @@ public sealed class Widget : Form
         Cursor = e.X > Width - 15 * DpiScale && e.Y > Height - 15 * DpiScale ? Cursors.SizeNWSE : next >= 0 ? Cursors.Hand : Cursors.Default;
     }
 
-    protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); hover = -1; Invalidate(); }
+    protected override void OnMouseEnter(EventArgs e)
+    {
+        base.OnMouseEnter(e);
+        pointerInside = true;
+        Invalidate();
+    }
+
+    protected override void OnMouseLeave(EventArgs e)
+    {
+        base.OnMouseLeave(e);
+        pointerInside = false;
+        hover = -1;
+        Invalidate();
+    }
+
+    protected override void OnVisibleChanged(EventArgs e)
+    {
+        base.OnVisibleChanged(e);
+        pointerInside = Visible && ClientRectangle.Contains(PointToClient(MousePosition));
+        hover = -1;
+        Invalidate();
+    }
 
     protected override void OnMouseDown(MouseEventArgs e)
     {
@@ -285,7 +334,12 @@ public sealed class Widget : Form
     protected override void OnMouseCaptureChanged(EventArgs e)
     {
         base.OnMouseCaptureChanged(e);
-        if (!Capture) resizing = false;
+        if (!Capture)
+        {
+            resizing = false;
+            pointerInside = ClientRectangle.Contains(PointToClient(MousePosition));
+            Invalidate();
+        }
     }
 
     protected override bool ProcessCmdKey(ref Message msg, Keys keyData)

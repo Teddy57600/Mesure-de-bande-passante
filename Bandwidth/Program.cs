@@ -10,6 +10,7 @@ internal static class Program
     {
         ApplicationConfiguration.Initialize();
         var capture = Argument(args, "--capture");
+        var captureHover = Argument(args, "--capture-hover");
         var captureSettings = Argument(args, "--capture-settings");
         var report = Argument(args, "--smoke-report");
         if (captureSettings is not null)
@@ -30,14 +31,15 @@ internal static class Program
             return 0;
         }
         using var mutex = new Mutex(true, @"Local\MiniDebit.Widget", out var first);
-        if (!first && capture is null && report is null)
+        if (!first && capture is null && captureHover is null && report is null)
         {
             MessageBox.Show("MiniDébit est déjà ouvert. Retrouvez son icône près de l’horloge.", "MiniDébit");
             return 0;
         }
-        var settings = capture is not null || report is not null ? new Settings { AlwaysOnTop = false } : Settings.Load();
-        using var window = new Widget(settings, capture is not null || report is not null);
-        if (capture is not null || report is not null)
+        bool diagnostic = capture is not null || captureHover is not null || report is not null;
+        var settings = diagnostic ? new Settings { AlwaysOnTop = false } : Settings.Load();
+        using var window = new Widget(settings, diagnostic);
+        if (diagnostic)
         {
             var process = Process.GetCurrentProcess();
             var startCpu = process.TotalProcessorTime;
@@ -50,13 +52,8 @@ internal static class Program
                 finish.Stop();
                 try
                 {
-                    if (capture is not null)
-                    {
-                        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(capture))!);
-                        using var bitmap = new Bitmap(window.ClientSize.Width, window.ClientSize.Height);
-                        window.DrawToBitmap(bitmap, window.ClientRectangle);
-                        bitmap.Save(capture, System.Drawing.Imaging.ImageFormat.Png);
-                    }
+                    if (capture is not null) window.CapturePreview(capture, false);
+                    if (captureHover is not null) window.CapturePreview(captureHover, true);
                     if (report is not null)
                     {
                         process.Refresh();
