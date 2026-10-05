@@ -181,7 +181,8 @@ public sealed class Widget : Form
             DrawButton(g, 2, "×", w - 29);
         }
         float chartTop = HeaderVisible ? 65 : 13;
-        var chart = new RectangleF(13, chartTop, w - 26, h - chartTop - 57);
+        float rateHeight = RateRenderer.Measure(rateFont, labelFont, arrowFont, settings.Rates.Compact).Height;
+        var chart = new RectangleF(13, chartTop, w - 26, h - chartTop - rateHeight - 9);
         if (HeaderVisible)
         {
             DrawText(g, Units.Rate(scale, settings.Bits), smallFont, Muted, new RectangleF(13, chartTop - 16, 160, 14));
@@ -190,7 +191,7 @@ public sealed class Widget : Form
         GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
-        RateRenderer.Draw(g, new RectangleF(1, h - 49, w - 2, 48), Units.Rate(current.Down, settings.Bits),
+        RateRenderer.Draw(g, new RectangleF(1, h - rateHeight - 1, w - 2, rateHeight), Units.Rate(current.Down, settings.Bits),
             Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         using var grip = new Pen(Muted, 1);
         g.DrawLine(grip, w - 8, h - 4, w - 4, h - 8);

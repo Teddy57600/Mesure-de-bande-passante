@@ -103,7 +103,7 @@ public sealed class SettingsForm : Form
         graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 328), AutoSize = true });
         var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 350), Size = new Size(476, 110) };
         graph.Controls.Add(preview);
-        var rateTable = Table(ratePage, 3, 40);
+        var rateTable = Table(ratePage, 4, 40);
         var rateBackground = new ColorField(settings.Rates.BackgroundColor, settings.Rates.Background(settings.Graph, settings.Dark), true, "Fond graphique");
         var rateText = new ColorField(settings.Rates.TextColor, settings.Rates.Text(settings.Graph, settings.Dark), true, "Auto (contraste)");
         var draftFont = new RateAppearance { FontFamily = settings.Rates.FontFamily, FontSizePixels = settings.Rates.FontSizePixels, Style = settings.Rates.Style };
@@ -111,18 +111,20 @@ public sealed class SettingsForm : Form
         Row(rateTable, 1, "Couleur du texte", rateText);
         var chooseFont = new Button { Text = "Choisir la police…", Dock = DockStyle.Fill };
         Row(rateTable, 2, "Police des débits", chooseFont);
-        var fontDescription = new Label { Location = new Point(12, 147), Size = new Size(476, 30) };
+        var compact = new CheckBox { Text = "Réduire les marges verticales", Checked = settings.Rates.Compact, Dock = DockStyle.Fill };
+        Row(rateTable, 3, "Bandeau compact", compact);
+        var fontDescription = new Label { Location = new Point(12, 187), Size = new Size(476, 30) };
         ratePage.Controls.Add(fontDescription);
-        ratePage.Controls.Add(new Label { Location = new Point(12, 192), Size = new Size(476, 62), ForeColor = Color.FromArgb(94, 115, 141),
+        ratePage.Controls.Add(new Label { Location = new Point(12, 232), Size = new Size(476, 62), ForeColor = Color.FromArgb(94, 115, 141),
             Text = "« Fond graphique » reprend automatiquement la couleur du graphique.\nLa police s’applique aux valeurs et aux libellés Réception / Envoi.\nLes flèches gardent les couleurs de leurs courbes." });
         RateAppearance ReadRates() => new()
         {
             BackgroundColor = rateBackground.Value, TextColor = rateText.Value,
-            FontFamily = draftFont.FontFamily, FontSizePixels = draftFont.FontSizePixels, Style = draftFont.Style
+            FontFamily = draftFont.FontFamily, FontSizePixels = draftFont.FontSizePixels, Style = draftFont.Style, Compact = compact.Checked
         };
-        ratePage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 273), AutoSize = true });
+        ratePage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 313), AutoSize = true });
         var ratePreview = new RatePreview(ReadRates, ReadAppearance, () => theme.SelectedIndex == 0)
-            { Location = new Point(12, 299), Size = new Size(476, 58) };
+            { Location = new Point(12, 339), Size = new Size(476, 48) };
         ratePage.Controls.Add(ratePreview);
         void RefreshRates()
         {
@@ -131,10 +133,15 @@ public sealed class SettingsForm : Form
             rateBackground.UpdateAutomaticColor(graphStyle.Background(dark));
             rateText.UpdateAutomaticColor(ReadRates().Text(graphStyle, dark));
             fontDescription.Text = $"Police sélectionnée : {draftFont.FontFamily} · {draftFont.FontSizePixels * 72 / 96:0.#} pt";
+            using var numbers = draftFont.CreateFont();
+            using var captions = draftFont.CreateFont(true);
+            using var arrows = new Font("Segoe UI", 18, FontStyle.Bold, GraphicsUnit.Pixel);
+            ratePreview.Height = (int)Math.Ceiling(RateRenderer.Measure(numbers, captions, arrows, compact.Checked).Height * ratePreview.DeviceDpi / 96f);
             ratePreview.Invalidate();
         }
         rateBackground.Changed += (_, _) => RefreshRates();
         rateText.Changed += (_, _) => RefreshRates();
+        compact.CheckedChanged += (_, _) => RefreshRates();
         chooseFont.Click += (_, _) =>
         {
             using var currentFont = draftFont.CreateFont();
@@ -146,11 +153,12 @@ public sealed class SettingsForm : Form
             draftFont.Normalize();
             RefreshRates();
         };
-        var resetRates = new Button { Text = "Rétablir le bandeau par défaut", Location = new Point(12, 383), Size = new Size(256, 30) };
+        var resetRates = new Button { Text = "Rétablir le bandeau par défaut", Location = new Point(12, 430), Size = new Size(256, 30) };
         ratePage.Controls.Add(resetRates);
         resetRates.Click += (_, _) =>
         {
             draftFont = new RateAppearance();
+            compact.Checked = false;
             rateBackground.Value = ""; rateText.Value = "";
             RefreshRates();
         };

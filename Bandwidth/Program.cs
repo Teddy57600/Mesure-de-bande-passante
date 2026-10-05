@@ -17,7 +17,9 @@ internal static class Program
         var report = Argument(args, "--smoke-report");
         if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null)
         {
-            using var dialog = new SettingsForm(new Settings(), SystemIcons.Application);
+            var captureConfiguration = new Settings();
+            captureConfiguration.Rates.Compact = args.Contains("--compact");
+            using var dialog = new SettingsForm(captureConfiguration, SystemIcons.Application);
             if (captureGraphSettings is not null) dialog.SelectGraphTab();
             if (captureRateSettings is not null) dialog.SelectRatesTab();
             var settingsCapturePath = captureRateSettings ?? captureGraphSettings ?? captureSettings!;
@@ -43,6 +45,7 @@ internal static class Program
         }
         bool diagnostic = capture is not null || captureHover is not null || report is not null;
         var settings = diagnostic ? new Settings { AlwaysOnTop = false } : Settings.Load();
+        if (diagnostic) settings.Rates.Compact = args.Contains("--compact");
         using var window = new Widget(settings, diagnostic);
         if (diagnostic)
         {

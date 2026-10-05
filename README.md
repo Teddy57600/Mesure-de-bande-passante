@@ -43,6 +43,8 @@ L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police
 
 ![Apparence du bandeau des débits](docs/settings-rates.png)
 
+Dans **Débits → Bandeau compact**, cocher **Réduire les marges verticales** pour resserrer le bandeau, en conservant les valeurs et les libellés. Sa hauteur s’adapte à la police choisie ; l’espace libéré revient au graphique. L’aperçu reflète cette hauteur et l’option est mémorisée après enregistrement. Le mode standard reste sélectionné par défaut.
+
 | Réglage | Valeurs |
 |---|---|
 | Carte réseau | Automatique, carte précise ou cumul des cartes actives |
@@ -97,6 +99,7 @@ Le diagnostic ferme l’application après 32 secondes. Il mesure la mémoire et
 Une capture de la fenêtre des paramètres peut être produite avec `--capture-settings chemin.png`.
 L’onglet Graphique peut être capturé avec `--capture-graph-settings chemin.png`.
 L’onglet Débits peut être capturé avec `--capture-rate-settings chemin.png`.
+Ajouter `--compact` à un diagnostic pour capturer le widget ou l’onglet Débits en mode compact sans modifier les paramètres utilisateur.
 Ajouter `--capture-hover chemin.png` au diagnostic pour capturer aussi le bandeau affiché au survol, sur le même relevé de trafic.
 
 Les compteurs sont lus avec l’API Windows exposée par [.NET NetworkInterface.GetIPStatistics](https://learn.microsoft.com/en-us/dotnet/api/system.net.networkinformation.networkinterface.getipstatistics). Le temps entre relevés est mesuré par une horloge monotone ; l’ajout, le retrait ou la remise à zéro des compteurs d’une carte ne produit pas de pic artificiel.

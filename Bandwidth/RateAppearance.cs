@@ -8,6 +8,7 @@ public sealed class RateAppearance
     public string FontFamily { get; set; } = "Segoe UI";
     public double FontSizePixels { get; set; } = 18;
     public int Style { get; set; } = (int)FontStyle.Bold;
+    public bool Compact { get; set; }
 
     public void Normalize()
     {
@@ -43,6 +44,20 @@ public sealed class RateAppearance
 
 internal static class RateRenderer
 {
+    internal readonly record struct Layout(float Height, float NumberTop, float NumberHeight, float CaptionTop, float CaptionHeight);
+    public static Layout Measure(Font numbers, Font captions, Font arrows, bool compact)
+    {
+        // Measure at 96 DPI because the drawing surface scales these logical pixels.
+        float numberHeight = (float)Math.Ceiling(Math.Max(numbers.GetHeight(96), arrows.GetHeight(96)));
+        float captionHeight = (float)Math.Ceiling(captions.GetHeight(96));
+        if (compact)
+            return new(numberHeight + captionHeight + 4, 2, numberHeight, 2 + numberHeight, captionHeight);
+        numberHeight = Math.Max(27, numberHeight);
+        captionHeight = Math.Max(13, captionHeight);
+        float captionTop = Math.Max(28, 4 + numbers.GetHeight(96));
+        return new(Math.Max(48, captionTop + captionHeight + 7), 4, numberHeight, captionTop, captionHeight);
+    }
+
     public static void Draw(Graphics g, RectangleF bounds, string down, string up, RateAppearance rates,
         GraphAppearance graph, bool dark, Font rateFont, Font labelFont, Font arrowFont)
     {
@@ -51,15 +66,16 @@ internal static class RateRenderer
         var text = rates.Text(graph, dark);
         var caption = rates.Text(graph, dark, true);
         float x = bounds.Left, y = bounds.Top, w = bounds.Width;
+        var layout = Measure(rateFont, labelFont, arrowFont, rates.Compact);
         using var divider = new Pen(Color.FromArgb(65, text));
         g.DrawLine(divider, x + 13, y, x + w - 13, y);
-        g.DrawLine(divider, x + w / 2, y + 7, x + w / 2, y + 37);
-        Text(g, "↓", arrowFont, graph.Reception, new RectangleF(x + 13, y + 5, 20, 27));
-        Text(g, down, rateFont, text, new RectangleF(x + 35, y + 4, w / 2 - 45, 27));
-        Text(g, "RÉCEPTION", labelFont, caption, new RectangleF(x + 35, y + 28, w / 2 - 45, 13));
-        Text(g, "↑", arrowFont, graph.Sending, new RectangleF(x + w / 2 + 10, y + 5, 20, 27));
-        Text(g, up, rateFont, text, new RectangleF(x + w / 2 + 32, y + 4, w / 2 - 42, 27));
-        Text(g, "ENVOI", labelFont, caption, new RectangleF(x + w / 2 + 32, y + 28, w / 2 - 42, 13));
+        g.DrawLine(divider, x + w / 2, y + (rates.Compact ? 2 : 7), x + w / 2, y + layout.Height - (rates.Compact ? 2 : 11));
+        Text(g, "↓", arrowFont, graph.Reception, new RectangleF(x + 13, y + layout.NumberTop, 20, layout.NumberHeight));
+        Text(g, down, rateFont, text, new RectangleF(x + 35, y + layout.NumberTop, w / 2 - 45, layout.NumberHeight));
+        Text(g, "RÉCEPTION", labelFont, caption, new RectangleF(x + 35, y + layout.CaptionTop, w / 2 - 45, layout.CaptionHeight));
+        Text(g, "↑", arrowFont, graph.Sending, new RectangleF(x + w / 2 + 10, y + layout.NumberTop, 20, layout.NumberHeight));
+        Text(g, up, rateFont, text, new RectangleF(x + w / 2 + 32, y + layout.NumberTop, w / 2 - 42, layout.NumberHeight));
+        Text(g, "ENVOI", labelFont, caption, new RectangleF(x + w / 2 + 32, y + layout.CaptionTop, w / 2 - 42, layout.CaptionHeight));
     }
 
     private static void Text(Graphics g, string value, Font font, Color color, RectangleF bounds)
