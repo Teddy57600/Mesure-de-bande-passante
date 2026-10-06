@@ -16,10 +16,11 @@ internal static class Program
         var captureRateSettings = Argument(args, "--capture-rate-settings");
         var captureHistorySettings = Argument(args, "--capture-history-settings");
         var captureFrameSettings = Argument(args, "--capture-frame-settings");
+        var captureMaximumSettings = Argument(args, "--capture-max-settings");
         var diagnosticSettings = Argument(args, "--diagnostic-settings");
         var historyPath = Argument(args, "--history-db");
         var report = Argument(args, "--smoke-report");
-        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null || captureFrameSettings is not null)
+        if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null || captureFrameSettings is not null || captureMaximumSettings is not null)
         {
             var captureConfiguration = diagnosticSettings is null ? new Settings() : Settings.Load(diagnosticSettings);
             captureConfiguration.Rates.Compact = args.Contains("--compact");
@@ -28,7 +29,8 @@ internal static class Program
             if (captureRateSettings is not null) dialog.SelectRatesTab();
             if (captureHistorySettings is not null) dialog.SelectHistoryTab();
             if (captureFrameSettings is not null) dialog.SelectFrameTab();
-            var settingsCapturePath = captureFrameSettings ?? captureHistorySettings ?? captureRateSettings ?? captureGraphSettings ?? captureSettings!;
+            if (captureMaximumSettings is not null) dialog.SelectMaximumTextTab();
+            var settingsCapturePath = captureMaximumSettings ?? captureFrameSettings ?? captureHistorySettings ?? captureRateSettings ?? captureGraphSettings ?? captureSettings!;
             using var close = new System.Windows.Forms.Timer { Interval = 1000 };
             close.Tick += (_, _) =>
             {

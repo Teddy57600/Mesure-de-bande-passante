@@ -53,6 +53,10 @@ Les **moyennes de réception et d’envoi** sont indiquées par deux petits tria
 
 Le calcul utilise uniquement les mesures de la période visible, pondérées par leur durée réelle, avec l’intervalle à cheval sur le début de période limité à sa partie visible. Au démarrage, il utilise la durée déjà mesurée, sans ajouter des zéros pour le passé absent. L’affichage suit les unités du widget et reste visible hors survol.
 
+L’onglet **Texte Max** personnalise la police du texte au-dessus du repère maximum : famille, taille de **6 à 18 pt**, gras, italique, souligné et barré via **Choisir la police…**, ainsi que sa couleur. **Couleur du pic**, activé par défaut, reprend la couleur de la courbe qui a produit le maximum ; une couleur personnalisée reste indépendante de la ligne. L’aperçu montre les changements avant enregistrement et **Rétablir le texte Max par défaut** restaure Segoe UI, environ 6,75 pt, sans style particulier. Une police absente est remplacée par Segoe UI. L’emplacement et la hauteur du texte s’adaptent à la police ; une valeur trop large est tronquée pour rester dans le graphique.
+
+![Apparence du texte maximum](docs/settings-max.png)
+
 L’aperçu réagit aux réglages avant leur enregistrement et utilise des données d’exemple. **Enregistrer** applique et mémorise les changements ; **Annuler** laisse l’apparence du widget intacte. **Rétablir l’apparence par défaut** ne remet à zéro que les réglages du graphique, après enregistrement.
 
 L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police (famille, taille et style) et couleur du texte des valeurs et des libellés Réception / Envoi. **Fond graphique**, activé par défaut, reprend automatiquement la couleur du graphique, y compris ses changements ultérieurs. **Auto (contraste)** adapte la couleur du texte au fond ; une couleur personnalisée peut aussi être choisie. Les flèches gardent les couleurs des courbes. L’aperçu permet de contrôler le rendu avant d’enregistrer. Une police absente sur un autre ordinateur est remplacée par Segoe UI.
@@ -139,6 +143,7 @@ L’onglet Graphique peut être capturé avec `--capture-graph-settings chemin.p
 L’onglet Débits peut être capturé avec `--capture-rate-settings chemin.png`.
 L’onglet Historique peut être capturé avec `--capture-history-settings chemin.png`.
 L’onglet Cadre peut être capturé avec `--capture-frame-settings chemin.png`.
+L’onglet Texte Max peut être capturé avec `--capture-max-settings chemin.png`.
 Ajouter `--diagnostic-settings chemin.json` à une capture ou un diagnostic pour vérifier des réglages personnalisés dans un fichier distinct, sans écrire les paramètres utilisateur.
 Les diagnostics désactivent l’historique par défaut ; ajouter `--history-db chemin.sqlite` pour tester les écritures dans une base distincte des données utilisateur. `--long-benchmark` prolonge le diagnostic à 72 secondes, dont environ 70 secondes mesurées après démarrage.
 Ajouter `--compact` à un diagnostic pour capturer le widget ou l’onglet Débits en mode compact sans modifier les paramètres utilisateur.

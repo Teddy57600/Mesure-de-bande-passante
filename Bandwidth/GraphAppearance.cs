@@ -21,6 +21,7 @@ public sealed class GraphAppearance
     public bool ShowMaximum { get; set; } = true;
     public bool ShowAverage { get; set; } = true;
     public int MarginPixels { get; set; } = 3;
+    public MaximumTextAppearance MaximumText { get; set; } = new();
 
     public void Normalize()
     {
@@ -33,6 +34,8 @@ public sealed class GraphAppearance
         GridStyle = Math.Clamp(GridStyle, 0, 2);
         FillOpacityPercent = Math.Clamp(FillOpacityPercent, 0, 100);
         MarginPixels = Math.Clamp(MarginPixels, 0, 20);
+        MaximumText ??= new MaximumTextAppearance();
+        MaximumText.Normalize();
     }
 
     internal static string NormalizeColor(string? value, string fallback) =>
@@ -62,13 +65,15 @@ internal static class GraphRenderer
         g.DrawLine(line, chart.Left, y, chart.Right, y);
         string label = $"Max {(peak.Reception ? "↓" : "↑")} : {Units.Rate(peak.Rate, bits)}";
         if (peak.Rate > scale) label += " (hors échelle)";
-        using var font = new Font("Segoe UI", 9, FontStyle.Regular, GraphicsUnit.Pixel);
+        using var font = appearance.MaximumText.CreateFont();
         using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center,
             FormatFlags = StringFormatFlags.NoWrap, Trimming = StringTrimming.EllipsisCharacter };
         float width = Math.Min(chart.Width - 4, g.MeasureString(label, font).Width + 8);
-        var textBounds = new RectangleF(chart.Left + (chart.Width - width) / 2, Math.Max(chart.Top, y - 14), width, 12);
+        float height = Math.Min(chart.Height, (float)Math.Ceiling(font.GetHeight(96)) + 2);
+        var textBounds = new RectangleF(chart.Left + (chart.Width - width) / 2,
+            Math.Clamp(y - height - 2, chart.Top, Math.Max(chart.Top, chart.Bottom - height)), width, height);
         using var background = new SolidBrush(appearance.Background(dark));
-        using var text = new SolidBrush(color);
+        using var text = new SolidBrush(GraphAppearance.Resolve(appearance.MaximumText.ColorHex, color));
         g.FillRectangle(background, textBounds);
         g.DrawString(label, font, text, textBounds, format);
         return textBounds;

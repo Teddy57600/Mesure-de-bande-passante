@@ -8,6 +8,7 @@ public sealed class SettingsForm : Form
     internal void SelectRatesTab() => tabs.SelectedIndex = 2;
     internal void SelectHistoryTab() => tabs.SelectedIndex = 3;
     internal void SelectFrameTab() => tabs.SelectedIndex = 4;
+    internal void SelectMaximumTextTab() => tabs.SelectedIndex = 5;
 
     protected override void OnLoad(EventArgs e)
     {
@@ -44,7 +45,8 @@ public sealed class SettingsForm : Form
         var ratePage = new TabPage("Débits") { BackColor = BackColor };
         var storagePage = new TabPage("Historique") { BackColor = BackColor };
         var framePage = new TabPage("Cadre") { BackColor = BackColor };
-        tabs.TabPages.AddRange([general, graph, ratePage, storagePage, framePage]);
+        var maximumPage = new TabPage("Texte Max") { BackColor = BackColor };
+        tabs.TabPages.AddRange([general, graph, ratePage, storagePage, framePage, maximumPage]);
         Controls.Add(tabs);
         ComboBox Choice(params object[] values)
         {
@@ -93,6 +95,8 @@ public sealed class SettingsForm : Form
         general.Controls.Add(new Label { Location = new Point(12, 413), Size = new Size(476, 85), ForeColor = Color.FromArgb(94, 115, 141), Text = "La période affichée est indépendante du délai de mesure.\nLe cumul peut compter deux fois le trafic d’un VPN.\nIPv4 publique : recherche via ipify sur la carte sélectionnée,\ntoutes les 10 minutes. Désactiver arrête les requêtes." });
 
         var appearance = settings.Graph;
+        var draftMaximum = new MaximumTextAppearance { FontFamily = appearance.MaximumText.FontFamily,
+            FontSizePixels = appearance.MaximumText.FontSizePixels, Style = appearance.MaximumText.Style, ColorHex = appearance.MaximumText.ColorHex };
         var graphTable = Table(graph, 12, 30);
         var down = new ColorField(appearance.DownColor, appearance.Reception);
         var up = new ColorField(appearance.UpColor, appearance.Sending);
@@ -126,7 +130,7 @@ public sealed class SettingsForm : Form
             DownColor = down.Value, UpColor = up.Value, BackgroundColor = background.Value, GridColor = gridColor.Value,
             LineWidth = (double)thickness.Value, LineStyle = lineStyle.SelectedIndex, ShowGrid = showGrid.Checked,
             GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value, ShowMaximum = showMaximum.Checked,
-            MarginPixels = (int)margin.Value, ShowAverage = showAverage.Checked
+            MarginPixels = (int)margin.Value, ShowAverage = showAverage.Checked, MaximumText = draftMaximum
         };
         graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 380), AutoSize = true });
         var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 404), Size = new Size(476, 70) };
@@ -261,6 +265,43 @@ public sealed class SettingsForm : Form
             RefreshPreview();
         };
         RefreshPreview();
+        var maximumTable = Table(maximumPage, 2, 40);
+        var maximumFont = new Button { Text = "Choisir la police…", Dock = DockStyle.Fill };
+        var maximumColor = new ColorField(draftMaximum.ColorHex, appearance.Reception, true, "Couleur du pic");
+        Row(maximumTable, 0, "Police du texte Max", maximumFont);
+        Row(maximumTable, 1, "Couleur du texte", maximumColor);
+        var maximumDescription = new Label { Location = new Point(12, 111), Size = new Size(476, 35) };
+        maximumPage.Controls.Add(maximumDescription);
+        maximumPage.Controls.Add(new Label { Location = new Point(12, 159), Size = new Size(476, 78), ForeColor = Color.FromArgb(94, 115, 141),
+            Text = "Choisissez la famille, la taille et le style dans le sélecteur de police.\n« Couleur du pic » reprend la couleur de réception ou d’envoi.\nLe texte s’adapte à la police ; la ligne conserve la couleur du pic." });
+        maximumPage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 259), AutoSize = true });
+        GraphAppearance MaximumPreviewAppearance()
+        {
+            var style = ReadAppearance(); style.ShowMaximum = true; return style;
+        }
+        var maximumPreview = new GraphPreview(MaximumPreviewAppearance, () => theme.SelectedIndex == 0)
+            { Location = new Point(12, 287), Size = new Size(476, 160) };
+        maximumPage.Controls.Add(maximumPreview);
+        void RefreshMaximum()
+        {
+            maximumDescription.Text = $"Police sélectionnée : {draftMaximum.FontFamily} · {draftMaximum.FontSizePixels * 72 / 96:0.#} pt";
+            maximumColor.UpdateAutomaticColor(ReadAppearance().Reception);
+            maximumPreview.Invalidate(); RefreshPreview();
+        }
+        maximumColor.Changed += (_, _) => { draftMaximum.ColorHex = maximumColor.Value; RefreshMaximum(); };
+        maximumFont.Click += (_, _) =>
+        {
+            using var current = draftMaximum.CreateFont();
+            using var picker = new FontDialog { Font = current, MinSize = 6, MaxSize = 18, FontMustExist = true, ShowEffects = true, ShowColor = false };
+            if (picker.ShowDialog(this) != DialogResult.OK) return;
+            draftMaximum.FontFamily = picker.Font.Name; draftMaximum.FontSizePixels = picker.Font.SizeInPoints * 96 / 72;
+            draftMaximum.Style = (int)picker.Font.Style; draftMaximum.Normalize(); RefreshMaximum();
+        };
+        var maximumReset = new Button { Text = "Rétablir le texte Max par défaut", Location = new Point(12, 466), Size = new Size(256, 30) };
+        maximumPage.Controls.Add(maximumReset);
+        maximumReset.Click += (_, _) => { draftMaximum = new MaximumTextAppearance(); maximumColor.Value = ""; RefreshMaximum(); };
+        tabs.SelectedIndexChanged += (_, _) => { if (tabs.SelectedTab == maximumPage) RefreshMaximum(); };
+        RefreshMaximum();
         var storageTable = Table(storagePage, 2, 40);
         var storeEnabled = new CheckBox { Text = "Conserver chaque mesure", Checked = settings.Storage.Enabled, Dock = DockStyle.Fill };
         var retention = Number(1, 90, settings.Storage.RetentionDays);
