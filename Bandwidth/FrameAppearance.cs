@@ -58,6 +58,7 @@ internal sealed class FramePreview(Func<FrameAppearance> frame, Func<GraphAppear
             new PointF(chart.Left + i * chart.Width / (samples.Length - 1), chart.Bottom - sample * chart.Height)).ToArray();
         GraphRenderer.Curve(g, chart, Points([.05f, .12f, .08f, .35f, .15f, .06f, .25f, .09f]), style.Sending, style);
         GraphRenderer.Curve(g, chart, Points([.08f, .3f, .1f, .65f, .24f, .4f, .12f, .2f]), style.Reception, style);
+        GraphRenderer.Average(g, chart, style, isDark, new TrafficAverage(18000, 9000, 60), 100000, false, RectangleF.Empty);
         RateRenderer.Draw(g, new RectangleF(inset, h - inset - bandHeight, w - 2 * inset, bandHeight),
             "22,1 Ko/s", "7,7 Ko/s", band, style, isDark, values, captions, arrows);
         FrameRenderer.Draw(g, new RectangleF(0, 0, w, h), border, isDark);

@@ -19,6 +19,7 @@ public sealed class GraphAppearance
     public bool FillArea { get; set; } = true;
     public int FillOpacityPercent { get; set; } = 14;
     public bool ShowMaximum { get; set; } = true;
+    public bool ShowAverage { get; set; } = true;
     public int MarginPixels { get; set; } = 3;
 
     public void Normalize()
@@ -51,10 +52,10 @@ public sealed class GraphAppearance
 
 internal static class GraphRenderer
 {
-    public static void Maximum(Graphics g, RectangleF chart, GraphAppearance appearance, bool dark,
+    public static RectangleF Maximum(Graphics g, RectangleF chart, GraphAppearance appearance, bool dark,
         TrafficPeak peak, double scale, bool bits)
     {
-        if (!appearance.ShowMaximum || chart.Height <= 0 || scale <= 0) return;
+        if (!appearance.ShowMaximum || chart.Height <= 0 || scale <= 0) return RectangleF.Empty;
         float y = chart.Bottom - (float)Math.Clamp(peak.Rate / scale, 0, 1) * chart.Height;
         var color = peak.Reception ? appearance.Reception : appearance.Sending;
         using var line = new Pen(Color.FromArgb(190, color), 1) { DashStyle = DashStyle.Dash };
@@ -70,8 +71,28 @@ internal static class GraphRenderer
         using var text = new SolidBrush(color);
         g.FillRectangle(background, textBounds);
         g.DrawString(label, font, text, textBounds, format);
+        return textBounds;
     }
 
+    public static PointF AveragePoint(RectangleF chart, double rate, double scale, bool reception) =>
+        new(reception ? chart.Left + 3 : chart.Right - 3,
+            Math.Clamp(chart.Bottom - (float)Math.Clamp(rate / scale, 0, 1) * chart.Height, chart.Top + 3, chart.Bottom - 3));
+
+    public static void Average(Graphics g, RectangleF chart, GraphAppearance appearance, bool dark,
+        TrafficAverage average, double scale, bool bits, RectangleF maximumLabel)
+    {
+        if (!appearance.ShowAverage || average.Seconds <= 0 || chart.Height < 6 || chart.Width < 12 || scale <= 0) return;
+        Marker(average.Down, appearance.Reception, true);
+        Marker(average.Up, appearance.Sending, false);
+        void Marker(double rate, Color color, bool reception)
+        {
+            var point = AveragePoint(chart, rate, scale, reception);
+            float tip = reception ? chart.Left + 6 : chart.Right - 6;
+            float edge = reception ? chart.Left + .5f : chart.Right - .5f;
+            using var brush = new SolidBrush(color);
+            g.FillPolygon(brush, [new PointF(edge, point.Y - 3), new PointF(tip, point.Y), new PointF(edge, point.Y + 3)]);
+        }
+    }
     public static void Backdrop(Graphics g, RectangleF chart, GraphAppearance appearance, bool dark)
     {
         using var background = new SolidBrush(appearance.Background(dark));
@@ -142,6 +163,7 @@ internal sealed class GraphPreview : Control
             new PointF(chart.Left + index * chart.Width / (values.Length - 1), chart.Bottom - value * chart.Height)).ToArray();
         GraphRenderer.Curve(g, chart, Points([.04f, .06f, .08f, .3f, .12f, .07f, .1f, .24f, .06f, .08f, .16f, .04f, .07f]), style.Sending, style);
         GraphRenderer.Curve(g, chart, Points([.07f, .12f, .06f, .62f, .24f, .16f, .08f, .44f, .18f, .09f, .8f, .18f, .1f]), style.Reception, style);
-        GraphRenderer.Maximum(g, chart, style, dark(), new TrafficPeak(80000, true), 100000, false);
+        var maximum = GraphRenderer.Maximum(g, chart, style, dark(), new TrafficPeak(80000, true), 100000, false);
+        GraphRenderer.Average(g, chart, style, dark(), new TrafficAverage(27000, 11000, 60), 100000, false, maximum);
     }
 }

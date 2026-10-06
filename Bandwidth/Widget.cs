@@ -33,6 +33,9 @@ public sealed class Widget : Form
     private Size resizeSize;
     private double scale = 125000;
     private TrafficPeak visiblePeak;
+    private TrafficAverage visibleAverage;
+    private RectangleF averageChart;
+    private int averageHover = -1;
     public string MonitorStatus => monitor.Status;
     public string? ExternalIpv4 => publicIpv4.Address;
     public string? ExternalIpv4Error => publicIpv4.LastError;
@@ -135,6 +138,7 @@ public sealed class Widget : Form
         while (history.Count > maxSamples || (history.Count > 0 && (current.Time - history.Peek().Time).TotalSeconds > settings.HistorySeconds))
             history.Dequeue();
         visiblePeak = TrafficPeak.InWindow(history, current.Time, settings.HistorySeconds);
+        visibleAverage = TrafficAverage.InWindow(history, current.Time, settings.HistorySeconds);
         if (settings.FixedScaleMbps > 0) scale = settings.FixedScaleMbps * 125000;
         else
         {
@@ -144,7 +148,7 @@ public sealed class Widget : Form
         {
             var text = $"MiniDébit · ↓ {Units.Rate(current.Down, settings.Bits)} · ↑ {Units.Rate(current.Up, settings.Bits)}";
             tray.Text = text.Length > 63 ? text[..63] : text;
-            tooltip.SetToolTip(this, $"{AdapterCaption}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\nÉchelle : {Units.Rate(scale, settings.Bits)} • Période : {Units.Duration(settings.HistorySeconds)}\nClic droit ou double-clic : paramètres");
+            RefreshTooltip();
         }
         if (Visible) Invalidate();
     }
@@ -208,7 +212,10 @@ public sealed class Widget : Form
         GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
-        GraphRenderer.Maximum(g, chart, settings.Graph, settings.Dark, visiblePeak, scale, settings.Bits);
+        var maximumLabel = GraphRenderer.Maximum(g, chart, settings.Graph, settings.Dark, visiblePeak, scale, settings.Bits);
+        GraphRenderer.Average(g, chart, settings.Graph, settings.Dark, visibleAverage, scale, settings.Bits, maximumLabel);
+        averageChart = chart;
+        UpdateAverageHover(PointToClient(MousePosition));
         RateRenderer.Draw(g, new RectangleF(inset, h - rateHeight - inset, w - 2 * inset, rateHeight), Units.Rate(current.Down, settings.Bits),
             Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         using var grip = new Pen(Muted, 1);
@@ -276,6 +283,7 @@ public sealed class Widget : Form
             return;
         }
         var next = ButtonAt(e.Location);
+        UpdateAverageHover(e.Location);
         if (next != hover) { hover = next; Invalidate(); }
         Cursor = e.X > Width - 15 * DpiScale && e.Y > Height - 15 * DpiScale ? Cursors.SizeNWSE : next >= 0 ? Cursors.Hand : Cursors.Default;
     }
@@ -292,7 +300,35 @@ public sealed class Widget : Form
         base.OnMouseLeave(e);
         pointerInside = false;
         hover = -1;
+        averageHover = -1;
+        RefreshTooltip();
         Invalidate();
+    }
+
+    private void UpdateAverageHover(Point position)
+    {
+        int next = -1;
+        if (pointerInside && settings.Graph.ShowAverage && visibleAverage.Seconds > 0 && averageChart.Height >= 6)
+        {
+            var point = new PointF(position.X / DpiScale, position.Y / DpiScale);
+            var down = GraphRenderer.AveragePoint(averageChart, visibleAverage.Down, scale, true);
+            var up = GraphRenderer.AveragePoint(averageChart, visibleAverage.Up, scale, false);
+            if (Math.Abs(point.X - down.X) <= 6 && Math.Abs(point.Y - down.Y) <= 6) next = 0;
+            else if (Math.Abs(point.X - up.X) <= 6 && Math.Abs(point.Y - up.Y) <= 6) next = 1;
+        }
+        if (next == averageHover) return;
+        averageHover = next;
+        RefreshTooltip();
+    }
+
+    private void RefreshTooltip()
+    {
+        string average = settings.Graph.ShowAverage && visibleAverage.Seconds > 0
+            ? $"Moyennes : ↓ {Units.Rate(visibleAverage.Down, settings.Bits)} · ↑ {Units.Rate(visibleAverage.Up, settings.Bits)}\n" : "";
+        string text = averageHover >= 0
+            ? $"Moyenne {(averageHover == 0 ? "réception ↓" : "envoi ↑")} : {Units.Rate(averageHover == 0 ? visibleAverage.Down : visibleAverage.Up, settings.Bits)}\nPériode : {Units.Duration(settings.HistorySeconds)}"
+            : $"{AdapterCaption}\nSession : ↓ {Units.Volume(monitor.TotalDown)}   ↑ {Units.Volume(monitor.TotalUp)}\n{average}Échelle : {Units.Rate(scale, settings.Bits)} • Période : {Units.Duration(settings.HistorySeconds)}\nClic droit ou double-clic : paramètres";
+        if (tooltip.GetToolTip(this) != text) tooltip.SetToolTip(this, text);
     }
 
     protected override void OnVisibleChanged(EventArgs e)

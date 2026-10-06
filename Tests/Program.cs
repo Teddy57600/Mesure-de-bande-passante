@@ -8,6 +8,16 @@ void Check(bool condition, string description)
     Console.WriteLine($"OK {++count:00} — {description}");
 }
 var now = DateTimeOffset.Now;
+var weightedAverage = TrafficAverage.InWindow([new(now.AddSeconds(-3), 100, 20, 1), new(now, 300, 60, 3)], now, 60);
+Check(weightedAverage.Down == 250 && weightedAverage.Up == 50 && weightedAverage.Seconds == 4,
+    "La moyenne pondère les débits par la durée réelle des mesures");
+var clippedAverage = TrafficAverage.InWindow([new(now.AddSeconds(-2), 100, 50, 3), new(now, 400, 200, 2),
+    new(now.AddSeconds(-10), 999999, 999999, 1)], now, 4);
+Check(clippedAverage.Down == 250 && clippedAverage.Up == 125 && clippedAverage.Seconds == 4,
+    "La moyenne exclut les anciennes mesures et limite l’intervalle à la période visible");
+Check(TrafficAverage.InWindow([new(now.AddSeconds(-1), 0, 0), new(now, 100, 50, 1)], now, 300).Down == 100 &&
+    TrafficAverage.InWindow([], now, 300).Seconds == 0,
+    "Au démarrage, la moyenne utilise la durée observée sans ajouter de zéros fictifs");
 Check(PublicIpv4.Parse("203.0.113.42\n") == "203.0.113.42" && PublicIpv4.Parse("2001:db8::1") is null &&
     PublicIpv4.Parse("192.168.1.2") is null && PublicIpv4.Parse("<html>Erreur</html>") is null,
     "La réponse externe doit contenir une IPv4, jamais une IP locale ou une page d’erreur");

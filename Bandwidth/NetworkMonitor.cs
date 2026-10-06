@@ -9,6 +9,22 @@ public sealed record AdapterChoice(string Id, string Name)
 }
 public readonly record struct Counters(string Id, long Received, long Sent);
 public readonly record struct Sample(DateTimeOffset Time, double Down, double Up, double ElapsedSeconds = 0, double ReceivedBytes = 0, double SentBytes = 0);
+public readonly record struct TrafficAverage(double Down, double Up, double Seconds)
+{
+    public static TrafficAverage InWindow(IEnumerable<Sample> samples, DateTimeOffset now, int seconds)
+    {
+        var start = now.AddSeconds(-seconds);
+        double received = 0, sent = 0, duration = 0;
+        foreach (var sample in samples)
+        {
+            if (sample.Time <= start || sample.Time > now || !double.IsFinite(sample.ElapsedSeconds) || sample.ElapsedSeconds <= 0) continue;
+            // Each rate covers the interval ending at its timestamp; clip the first interval to the window.
+            double overlap = Math.Min(sample.ElapsedSeconds, (sample.Time - start).TotalSeconds);
+            received += sample.Down * overlap; sent += sample.Up * overlap; duration += overlap;
+        }
+        return duration > 0 ? new(received / duration, sent / duration, duration) : default;
+    }
+}
 public readonly record struct TrafficPeak(double Rate, bool Reception)
 {
     public static TrafficPeak InWindow(IEnumerable<Sample> samples, DateTimeOffset now, int seconds)

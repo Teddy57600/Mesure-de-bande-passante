@@ -114,8 +114,11 @@ public sealed class SettingsForm : Form
         Row(graphTable, 8, "Remplissage", fill);
         var fillOpacity = Number(0, 100, appearance.FillOpacityPercent, 1);
         Row(graphTable, 9, "Opacité du remplissage (%)", fillOpacity);
-        var showMaximum = new CheckBox { Text = "Ligne et valeur du maximum", Checked = appearance.ShowMaximum, Dock = DockStyle.Fill };
-        Row(graphTable, 10, "Maximum de la période", showMaximum);
+        var showMaximum = new CheckBox { Text = "Maximum", Checked = appearance.ShowMaximum, AutoSize = true };
+        var showAverage = new CheckBox { Text = "Moyenne", Checked = appearance.ShowAverage, AutoSize = true };
+        var markers = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+        markers.Controls.AddRange([showMaximum, showAverage]);
+        Row(graphTable, 10, "Repères de la période", markers);
         var margin = Number(0, 20, appearance.MarginPixels);
         Row(graphTable, 11, "Marge du graphique (px)", margin);
         GraphAppearance ReadAppearance() => new()
@@ -123,7 +126,7 @@ public sealed class SettingsForm : Form
             DownColor = down.Value, UpColor = up.Value, BackgroundColor = background.Value, GridColor = gridColor.Value,
             LineWidth = (double)thickness.Value, LineStyle = lineStyle.SelectedIndex, ShowGrid = showGrid.Checked,
             GridStyle = gridStyle.SelectedIndex, FillArea = fill.Checked, FillOpacityPercent = (int)fillOpacity.Value, ShowMaximum = showMaximum.Checked,
-            MarginPixels = (int)margin.Value
+            MarginPixels = (int)margin.Value, ShowAverage = showAverage.Checked
         };
         graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 380), AutoSize = true });
         var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 404), Size = new Size(476, 70) };
@@ -240,6 +243,7 @@ public sealed class SettingsForm : Form
         showGrid.CheckedChanged += (_, _) => RefreshPreview();
         fill.CheckedChanged += (_, _) => RefreshPreview();
         showMaximum.CheckedChanged += (_, _) => RefreshPreview();
+        showAverage.CheckedChanged += (_, _) => RefreshPreview();
         theme.SelectedIndexChanged += (_, _) => RefreshPreview();
         var reset = new Button { Text = "Rétablir l’apparence par défaut", Location = new Point(12, 484), Size = new Size(256, 28) };
         graph.Controls.Add(reset);
@@ -252,6 +256,7 @@ public sealed class SettingsForm : Form
             showGrid.Checked = defaults.ShowGrid; gridStyle.SelectedIndex = defaults.GridStyle;
             fill.Checked = defaults.FillArea; fillOpacity.Value = defaults.FillOpacityPercent;
             showMaximum.Checked = defaults.ShowMaximum;
+            showAverage.Checked = defaults.ShowAverage;
             margin.Value = defaults.MarginPixels;
             RefreshPreview();
         };
