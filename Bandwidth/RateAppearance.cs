@@ -68,21 +68,39 @@ internal static class RateRenderer
         float x = bounds.Left, y = bounds.Top, w = bounds.Width;
         var layout = Measure(rateFont, labelFont, arrowFont, rates.Compact);
         using var divider = new Pen(Color.FromArgb(65, text));
-        g.DrawLine(divider, x + 13, y, x + w - 13, y);
         g.DrawLine(divider, x + w / 2, y + (rates.Compact ? 2 : 7), x + w / 2, y + layout.Height - (rates.Compact ? 2 : 11));
-        Text(g, "↓", arrowFont, graph.Reception, new RectangleF(x + 13, y + layout.NumberTop, 20, layout.NumberHeight));
-        Text(g, down, rateFont, text, new RectangleF(x + 35, y + layout.NumberTop, w / 2 - 45, layout.NumberHeight));
-        Text(g, "RÉCEPTION", labelFont, caption, new RectangleF(x + 35, y + layout.CaptionTop, w / 2 - 45, layout.CaptionHeight));
-        Text(g, "↑", arrowFont, graph.Sending, new RectangleF(x + w / 2 + 10, y + layout.NumberTop, 20, layout.NumberHeight));
-        Text(g, up, rateFont, text, new RectangleF(x + w / 2 + 32, y + layout.NumberTop, w / 2 - 42, layout.NumberHeight));
-        Text(g, "ENVOI", labelFont, caption, new RectangleF(x + w / 2 + 32, y + layout.CaptionTop, w / 2 - 42, layout.CaptionHeight));
+        Cell(x, down, "RÉCEPTION", graph.Reception, true);
+        Cell(x + w / 2, up, "ENVOI", graph.Sending, false);
+
+        void Cell(float left, string value, string label, Color color, bool download)
+        {
+            float diameter = Math.Min(rates.Compact ? 28 : 38, layout.Height - 8);
+            float centerX = left + 12 + diameter / 2, centerY = y + layout.Height / 2;
+            using var bubble = new SolidBrush(Color.FromArgb(dark ? 35 : 20, color));
+            g.FillEllipse(bubble, centerX - diameter / 2, centerY - diameter / 2, diameter, diameter);
+            using var arrow = new Pen(color, Math.Max(1.5f, diameter / 16))
+            { StartCap = System.Drawing.Drawing2D.LineCap.Round, EndCap = System.Drawing.Drawing2D.LineCap.Round, LineJoin = System.Drawing.Drawing2D.LineJoin.Round };
+            float sign = download ? 1 : -1, length = diameter * .18f;
+            g.DrawLine(arrow, centerX, centerY - sign * length, centerX, centerY + sign * length);
+            g.DrawLines(arrow, [new PointF(centerX - length, centerY), new PointF(centerX, centerY + sign * length), new PointF(centerX + length, centerY)]);
+            float textX = left + diameter + 23;
+            float textWidth = Math.Max(1, w / 2 - diameter - 33);
+            Text(g, value, rateFont, string.IsNullOrEmpty(rates.TextColor) ? color : text,
+                new RectangleF(textX, y + layout.NumberTop, textWidth, layout.NumberHeight));
+            Text(g, label, labelFont, caption, new RectangleF(textX, y + layout.CaptionTop, textWidth, layout.CaptionHeight));
+        }
     }
 
     private static void Text(Graphics g, string value, Font font, Color color, RectangleF bounds)
     {
         using var brush = new SolidBrush(color);
         using var format = new StringFormat { LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-        g.DrawString(value, font, brush, bounds, format);
+        float fit = Math.Min(1, bounds.Width / Math.Max(1, g.MeasureString(value, font).Width));
+        var state = g.Save();
+        g.TranslateTransform(bounds.Left, bounds.Top + bounds.Height * (1 - fit) / 2);
+        g.ScaleTransform(fit, fit);
+        g.DrawString(value, font, brush, new RectangleF(0, 0, bounds.Width / fit, bounds.Height), format);
+        g.Restore(state);
     }
 }
 

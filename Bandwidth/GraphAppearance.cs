@@ -5,8 +5,8 @@ namespace MiniDebit;
 
 public sealed class GraphAppearance
 {
-    public const string DefaultDown = "#45CCE6";
-    public const string DefaultUp = "#FFAE5A";
+    public const string DefaultDown = "#0078FF";
+    public const string DefaultUp = "#FF7909";
     public string DownColor { get; set; } = DefaultDown;
     public string UpColor { get; set; } = DefaultUp;
     // Empty means follow the selected light/dark theme.
@@ -48,8 +48,8 @@ public sealed class GraphAppearance
 
     public Color Reception => Resolve(DownColor, Color.FromArgb(69, 204, 230));
     public Color Sending => Resolve(UpColor, Color.FromArgb(255, 174, 90));
-    public Color Background(bool dark) => Resolve(BackgroundColor, dark ? Color.FromArgb(20, 26, 36) : Color.FromArgb(246, 249, 253));
-    public Color Grid(bool dark) => Resolve(GridColor, dark ? Color.FromArgb(42, 53, 70) : Color.FromArgb(215, 226, 239));
+    public Color Background(bool dark) => Resolve(BackgroundColor, dark ? Color.FromArgb(20, 26, 36) : Color.FromArgb(250, 252, 255));
+    public Color Grid(bool dark) => Resolve(GridColor, dark ? Color.FromArgb(42, 53, 70) : Color.FromArgb(226, 235, 246));
     public static DashStyle Dash(int style) => style switch { 1 => DashStyle.Dot, 2 => DashStyle.Dash, _ => DashStyle.Solid };
 }
 
@@ -162,13 +162,15 @@ internal sealed class GraphPreview : Control
         var style = appearance();
         float margin = style.MarginPixels + 1;
         g.Clear(style.Background(dark()));
-        var chart = new RectangleF(margin, margin, Width / dpi - 2 * margin, Height / dpi - 2 * margin);
+        float badgeHeight = style.ShowMaximum || style.ShowAverage ? 28 : 0;
+        var chart = new RectangleF(margin, margin + badgeHeight, Width / dpi - 2 * margin, Math.Max(1, Height / dpi - 2 * margin - badgeHeight));
         GraphRenderer.Backdrop(g, chart, style, dark());
         PointF[] Points(float[] values) => values.Select((value, index) =>
             new PointF(chart.Left + index * chart.Width / (values.Length - 1), chart.Bottom - value * chart.Height)).ToArray();
         GraphRenderer.Curve(g, chart, Points([.04f, .06f, .08f, .3f, .12f, .07f, .1f, .24f, .06f, .08f, .16f, .04f, .07f]), style.Sending, style);
         GraphRenderer.Curve(g, chart, Points([.07f, .12f, .06f, .62f, .24f, .16f, .08f, .44f, .18f, .09f, .8f, .18f, .1f]), style.Reception, style);
-        var maximum = GraphRenderer.Maximum(g, chart, style, dark(), new TrafficPeak(80000, true), 100000, false);
-        GraphRenderer.Average(g, chart, style, dark(), new TrafficAverage(27000, 11000, 60), 100000, false, maximum);
+        DashboardRenderer.Statistics(g, new RectangleF(margin, margin, chart.Width, 24), style, dark(),
+            new TrafficPeak(80000, true), new TrafficAverage(27000, 11000, 60), false);
+        DashboardRenderer.Guides(g, chart, style, new TrafficPeak(80000, true), new TrafficAverage(27000, 11000, 60), 100000);
     }
 }

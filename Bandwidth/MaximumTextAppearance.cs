@@ -3,8 +3,8 @@ namespace MiniDebit;
 public sealed class MaximumTextAppearance
 {
     public string FontFamily { get; set; } = "Segoe UI";
-    public double FontSizePixels { get; set; } = 9;
-    public int Style { get; set; }
+    public double FontSizePixels { get; set; } = 13;
+    public int Style { get; set; } = (int)FontStyle.Bold;
     public string ColorHex { get; set; } = "";
 
     public void Normalize()

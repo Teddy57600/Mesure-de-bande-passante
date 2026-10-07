@@ -2,11 +2,13 @@
 
 Petit widget Windows de surveillance du trafic réseau, inspiré de la capture fournie : graphique en temps réel, réception et envoi affichés séparément, fenêtre déplaçable et redimensionnable.
 
-![Widget en fonctionnement](docs/widget.png)
+Les captures suivantes utilisent des données de démonstration. Le widget réel affiche le trafic mesuré sur la carte sélectionnée.
+
+![Widget en fonctionnement](docs/widget-modern.png)
 
 Au survol :
 
-![Widget survolé](docs/widget-hover.png)
+![Widget survolé](docs/widget-modern-hover.png)
 
 ## Lancer
 
@@ -22,7 +24,7 @@ La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’em
 
 - **Glisser la fenêtre** pour la déplacer ; tirer son coin inférieur droit pour la redimensionner.
 - Pendant le déplacement, le widget **accroche aux quatre bords** à environ 8 px (adaptés à la mise à l’échelle Windows). Éloigner la souris du bord le détache, même en déplaçant lentement la souris. Le point de prise initial reste la référence pendant tout le déplacement. Le widget reste dans la zone utilisable du moniteur sous le pointeur, au-dessus d’une barre des tâches en bas ou à côté d’une barre latérale. Déplacer le pointeur sur un autre écran pour y faire passer le widget. **Général → Déplacement → Accrocher aux bords de l’écran**, activé par défaut, permet de désactiver ce comportement. La position est mémorisée à la fin du déplacement.
-- Le **bandeau supérieur** (titre, carte réseau, boutons, échelle et durée) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère cet espace ; les débits restent visibles en bas.
+- Le **bandeau supérieur** (titre, carte réseau et boutons) apparaît uniquement lorsque la souris survole le widget. Hors survol, le graphique récupère cet espace ; les débits restent visibles en bas.
 - **Roue dentée**, **double-clic** ou **clic droit → Paramètres** : configurer le widget.
 - Si le widget est visible, les paramètres s’ouvrent à côté, avec un espace de 12 px adapté à l’échelle Windows. Le placement cherche une place libre à droite, à gauche, au-dessus ou au-dessous, puis sur les autres écrans, en respectant la barre des tâches. Si les dimensions des écrans ne permettent aucune disposition sans recouvrement, il minimise la surface recouverte.
 - **−** ou **Échap** : masquer le widget dans la zone de notification près de l’horloge. Son icône peut se trouver dans le menu des icônes masquées de Windows.
@@ -47,21 +49,21 @@ L’onglet **Général** regroupe les paramètres de mesure et du widget. L’on
 
 ![Apparence du graphique](docs/settings-graph.png)
 
-**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. À zéro, le cadre reste visible s’il est activé ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
+**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. La marge s’ajoute à la place nécessaire aux axes et aux angles arrondis. À zéro, le cadre reste visible s’il est activé ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
 
-Le graphique affiche une ligne horizontale en tirets au niveau du **maximum observé sur la période visible**, avec la valeur juste au-dessus. La flèche et la couleur indiquent si ce pic vient de la réception (↓) ou de l’envoi (↑) ; les deux débits sont comparés, sans les additionner. Le maximum baisse lorsque les anciens pics sortent de la période. Il utilise les mêmes unités que le widget et reste visible hors survol. **Graphique → Repères de la période → Maximum** permet de masquer ou d’afficher ce repère. Si le maximum dépasse une échelle fixe, la ligne reste au plafond et la valeur exacte porte la mention « hors échelle ».
+Le **maximum observé sur la période visible** apparaît dans une pastille au-dessus du graphique, avec une ligne horizontale en tirets. Sa couleur correspond à la courbe qui a produit ce pic. Réception et envoi sont comparés sans être additionnés. **Graphique → Repères de la période → Maximum** masque ou affiche la pastille et la ligne. Un maximum hors échelle reste lisible dans la pastille ; sa ligne est masquée.
 
-Les **moyennes de réception et d’envoi** sont indiquées par deux petits triangles colorés de 6 px au bord du graphique : réception à gauche, envoi à droite. Leur hauteur correspond à la moyenne sur l’échelle verticale, sans ligne horizontale supplémentaire ni bulle permanente. Survoler un repère affiche la valeur précise ; l’infobulle générale du widget contient aussi les deux moyennes. **Graphique → Repères de la période → Moyenne** permet de masquer ces repères et ces informations.
+La pastille **Moyenne** affiche le débit moyen total (réception + envoi), avec un repère horizontal bleu. Les deux moyennes séparées restent consultables dans l’infobulle. **Graphique → Repères de la période → Moyenne** masque ou affiche la pastille et le repère. Les pastilles occupent une bande dédiée au-dessus des courbes, sans les recouvrir.
 
 Le calcul utilise uniquement les mesures de la période visible, pondérées par leur durée réelle, avec l’intervalle à cheval sur le début de période limité à sa partie visible. Au démarrage, il utilise la durée déjà mesurée, sans ajouter des zéros pour le passé absent. L’affichage suit les unités du widget et reste visible hors survol.
 
-L’onglet **Texte Max** personnalise la police du texte au-dessus du repère maximum : famille, taille de **6 à 18 pt**, gras, italique, souligné et barré via **Choisir la police…**, ainsi que sa couleur. **Couleur du pic**, activé par défaut, reprend la couleur de la courbe qui a produit le maximum ; une couleur personnalisée reste indépendante de la ligne. L’aperçu montre les changements avant enregistrement et **Rétablir le texte Max par défaut** restaure Segoe UI, environ 6,75 pt, sans style particulier. Une police absente est remplacée par Segoe UI. L’emplacement et la hauteur du texte s’adaptent à la police ; une valeur trop large est tronquée pour rester dans le graphique.
+L’onglet **Texte Max** personnalise la police des pastilles (famille, taille, gras, italique, souligné et barré) et la couleur du maximum. **Couleur du pic** reprend la couleur de la courbe du maximum. L’aperçu reflète les changements ; le texte se réduit si nécessaire dans une petite fenêtre. Une police absente est remplacée par Segoe UI.
 
 ![Apparence du texte maximum](docs/settings-max.png)
 
 L’aperçu réagit aux réglages avant leur enregistrement et utilise des données d’exemple. **Enregistrer** applique et mémorise les changements ; **Annuler** laisse l’apparence du widget intacte. **Rétablir l’apparence par défaut** ne remet à zéro que les réglages du graphique, après enregistrement.
 
-L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police (famille, taille et style) et couleur du texte des valeurs et des libellés Réception / Envoi. **Fond graphique**, activé par défaut, reprend automatiquement la couleur du graphique, y compris ses changements ultérieurs. **Auto (contraste)** adapte la couleur du texte au fond ; une couleur personnalisée peut aussi être choisie. Les flèches gardent les couleurs des courbes. L’aperçu permet de contrôler le rendu avant d’enregistrer. Une police absente sur un autre ordinateur est remplacée par Segoe UI.
+L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police (famille, taille et style) et couleur du texte des valeurs et des libellés Réception / Envoi. **Fond graphique**, activé par défaut, reprend automatiquement la couleur du graphique, y compris ses changements ultérieurs. **Auto (contraste)** reprend la couleur de chaque courbe pour les valeurs et une couleur lisible pour les libellés ; une couleur personnalisée peut aussi être choisie. Les flèches gardent les couleurs des courbes. L’aperçu permet de contrôler le rendu avant d’enregistrer. Une police absente sur un autre ordinateur est remplacée par Segoe UI.
 
 ![Apparence du bandeau des débits](docs/settings-rates.png)
 

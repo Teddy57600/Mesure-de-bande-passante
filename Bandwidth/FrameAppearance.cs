@@ -29,8 +29,9 @@ internal static class FrameRenderer
         if (!appearance.Enabled) return;
         float width = (float)appearance.WidthPixels;
         using var pen = new Pen(appearance.Color(dark), width) { DashStyle = GraphAppearance.Dash(appearance.Style), LineJoin = LineJoin.Miter };
-        g.DrawRectangle(pen, bounds.Left + width / 2, bounds.Top + width / 2,
-            Math.Max(0, bounds.Width - width), Math.Max(0, bounds.Height - width));
+        using var path = DashboardRenderer.Round(new RectangleF(bounds.Left + width / 2, bounds.Top + width / 2,
+            Math.Max(1, bounds.Width - width), Math.Max(1, bounds.Height - width)), Math.Max(1, 16 - width / 2));
+        g.DrawPath(pen, path);
     }
 }
 

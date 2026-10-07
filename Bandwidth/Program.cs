@@ -74,6 +74,7 @@ internal static class Program
                 finish.Stop();
                 try
                 {
+                    if (args.Contains("--demo-chart")) window.SeedPreview();
                     if (capture is not null) window.CapturePreview(capture, false);
                     if (captureHover is not null) window.CapturePreview(captureHover, true);
                     if (report is not null)

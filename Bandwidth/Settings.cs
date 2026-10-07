@@ -9,7 +9,7 @@ public sealed class Settings
     public int IntervalMs { get; set; } = 1000;
     public int HistorySeconds { get; set; } = 300;
     public bool Bits { get; set; }
-    public bool Dark { get; set; } = true;
+    public bool Dark { get; set; }
     public bool AlwaysOnTop { get; set; } = true;
     public bool StartHidden { get; set; }
     public bool SnapToEdges { get; set; } = true;
@@ -20,8 +20,8 @@ public sealed class Settings
     public RateAppearance Rates { get; set; } = new();
     public FrameAppearance Frame { get; set; } = new();
     public HistorySettings Storage { get; set; } = new();
-    public int Width { get; set; } = 340;
-    public int Height { get; set; } = 176;
+    public int Width { get; set; } = 480;
+    public int Height { get; set; } = 240;
     public int? X { get; set; }
     public int? Y { get; set; }
 
