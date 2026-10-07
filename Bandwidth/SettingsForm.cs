@@ -86,8 +86,8 @@ public sealed class SettingsForm : Form
         Row(table, 6, "Échelle (Mbit/s, 0 = auto)", scale);
         var onTop = new CheckBox { Text = "Garder au premier plan", Checked = settings.AlwaysOnTop, Dock = DockStyle.Fill };
         Row(table, 7, "Affichage", onTop);
-        var hidden = new CheckBox { Text = "Dans la zone de notification", Checked = settings.StartHidden, Dock = DockStyle.Fill };
-        Row(table, 8, "Au lancement", hidden);
+        var showAtStartup = new CheckBox { Text = "Afficher le widget", Checked = !settings.StartHidden, Dock = DockStyle.Fill };
+        Row(table, 8, "Au lancement", showAtStartup);
         var snap = new CheckBox { Text = "Accrocher aux bords de l’écran", Checked = settings.SnapToEdges, Dock = DockStyle.Fill };
         Row(table, 9, "Déplacement", snap);
         var showPublicIpv4 = new CheckBox { Text = "Afficher l’IPv4 publique", Checked = settings.ShowPublicIpv4, Dock = DockStyle.Fill };
@@ -332,7 +332,7 @@ public sealed class SettingsForm : Form
             settings.OpacityPercent = (int)opacity.Value;
             settings.FixedScaleMbps = (double)scale.Value;
             settings.AlwaysOnTop = onTop.Checked;
-            settings.StartHidden = hidden.Checked;
+            settings.StartHidden = !showAtStartup.Checked;
             settings.SnapToEdges = snap.Checked;
             settings.ShowPublicIpv4 = showPublicIpv4.Checked;
             settings.Graph = ReadAppearance();

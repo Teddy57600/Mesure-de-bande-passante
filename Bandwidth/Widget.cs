@@ -476,24 +476,11 @@ public sealed class Widget : Form
 
     private static Icon MakeIcon()
     {
-        using var bitmap = new Bitmap(32, 32);
-        using (var g = Graphics.FromImage(bitmap))
-        {
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-            g.Clear(Color.FromArgb(20, 26, 36));
-            using var down = new Pen(GraphAppearance.Resolve(GraphAppearance.DefaultDown, Color.Cyan), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            using var up = new Pen(GraphAppearance.Resolve(GraphAppearance.DefaultUp, Color.Orange), 3) { StartCap = LineCap.Round, EndCap = LineCap.Round };
-            g.DrawLines(down, [new(5, 19), new(10, 25), new(15, 19)]);
-            g.DrawLine(down, 10, 7, 10, 24);
-            g.DrawLines(up, [new(18, 13), new(23, 7), new(28, 13)]);
-            g.DrawLine(up, 23, 8, 23, 25);
-        }
-        var handle = bitmap.GetHicon();
-        try { using var icon = Icon.FromHandle(handle); return (Icon)icon.Clone(); }
-        finally { DestroyIcon(handle); }
+        using var resource = typeof(Widget).Assembly.GetManifestResourceStream("MiniDebit.AppIcon")
+            ?? throw new InvalidOperationException("Icône MiniDébit introuvable.");
+        return new Icon(resource, 32, 32);
     }
 
     [DllImport("user32.dll")] private static extern bool ReleaseCapture();
     [DllImport("user32.dll")] private static extern nint SendMessage(nint hwnd, uint msg, nint wParam, nint lParam);
-    [DllImport("user32.dll")] private static extern bool DestroyIcon(nint handle);
 }

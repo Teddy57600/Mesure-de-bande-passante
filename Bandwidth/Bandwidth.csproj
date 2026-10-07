@@ -7,7 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <AssemblyName>MiniDebit</AssemblyName>
-    <Version>1.1.9</Version>
+    <Version>1.1.10</Version>
+    <ApplicationIcon>Assets\MiniDebit.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\MiniDebit.ico" LogicalName="MiniDebit.AppIcon" />
+  </ItemGroup>
 </Project>

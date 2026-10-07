@@ -12,6 +12,8 @@ Au survol :
 
 Double-cliquer sur **Lancer.cmd**, ou sur **dist\MiniDebit\MiniDebit.exe**. Garder les fichiers du dossier `dist\MiniDebit` ensemble.
 
+Le widget s’affiche directement au démarrage lorsque **Général → Au lancement → Afficher le widget** est coché, comme dans la configuration par défaut. Décocher cette option permet un lancement masqué si souhaité. L’exécutable et la zone de notification utilisent la même icône MiniDébit, intégrée en neuf tailles de 16 à 256 px ; aucun fichier image externe n’est nécessaire pour lancer le programme. Le dessin est régénérable avec `tools\create-icon.ps1`.
+
 L’application utilise **C# / WinForms et .NET 10 Desktop**. Ce runtime est déjà installé sur l’ordinateur utilisé pour la compilation. Sur un autre PC Windows 10/11, installer le [runtime .NET 10 Desktop](https://dotnet.microsoft.com/fr-fr/download/dotnet/10.0) correspondant à l’architecture. Le SDK est nécessaire uniquement pour compiler. Aucun droit administrateur n’est demandé par MiniDébit.
 
 La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’embarque pas le runtime afin de garder le téléchargement et le dossier très petits.
@@ -109,7 +111,7 @@ La fermeture normale écrit le dernier lot, avec une attente maximale de deux se
 
 La purge des anciennes mesures intervient lors d’une écriture, chaque jour et après un changement de durée. L’espace libéré est réutilisé par SQLite ; le fichier ne rétrécit pas automatiquement. À 1 000 ms, une journée représente environ 86 400 lignes ; à 250 ms, environ 345 600. Désactiver l’historique arrête les nouvelles mesures sans supprimer la base existante. Pour sauvegarder la base, quitter MiniDébit puis copier `traffic.sqlite`.
 
-Pour lancer MiniDébit à l’ouverture de session Windows, placer un raccourci vers l’exécutable dans le dossier ouvert par **Win+R → shell:startup**. Choisir « Dans la zone de notification » dans les paramètres pour un lancement discret. Aucune entrée de démarrage n’est ajoutée automatiquement.
+Pour lancer MiniDébit à l’ouverture de session Windows, placer un raccourci vers l’exécutable dans le dossier ouvert par **Win+R → shell:startup**. Conserver **Afficher le widget** coché pour le voir immédiatement ; décocher pour un lancement discret. Aucune entrée de démarrage n’est ajoutée automatiquement.
 
 ## Compiler et vérifier
 
