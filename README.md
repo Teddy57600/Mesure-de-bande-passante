@@ -16,6 +16,19 @@ Un graphique lisible, des valeurs stables et une apparence à votre mesure.</p>
 
 </div>
 
+## 📚 Table des matières
+
+- [À découvrir](#fonctionnalites)
+- [Aperçu](#apercu)
+- [Démarrage rapide](#demarrage)
+- [Utilisation](#utilisation)
+- [Réglages et apparence](#reglages)
+- [Cadre de la fenêtre](#cadre)
+- [Historique SQLite](#historique)
+- [Compiler et vérifier](#developpement)
+
+<a id="fonctionnalites"></a>
+
 ## ✨ À découvrir
 
 | | MiniDébit au quotidien |
@@ -26,6 +39,8 @@ Un graphique lisible, des valeurs stables et une apparence à votre mesure.</p>
 | 🪟 **Une présence discrète** | En-tête au survol, zone de notification et accrochage aux bords de l’écran. |
 | 🗃️ **Des données conservées** | Chaque mesure enregistrée dans SQLite ; export CSV du graphique. |
 | ⚙️ **Des réglages indépendants** | Fréquence des mesures, période du graphique et lissage configurés séparément. |
+
+<a id="apercu"></a>
 
 ## 🖼️ Aperçu
 
@@ -148,6 +163,8 @@ MiniDébit observe le trafic total de la carte, y compris les échanges locaux. 
 La **période affichée** règle la vitesse du défilement, indépendamment de l’**actualisation des mesures**. Avec 5 minutes, le graphique défile cinq fois plus lentement qu’avec une minute, tout en continuant de mesurer et d’afficher les débits toutes les 1 000 ms par défaut. Le réglage se trouve dans **Paramètres → Période affichée (min)**. Une période plus longue se remplit progressivement avec les nouvelles mesures ; le programme ne peut pas reconstituer des données déjà supprimées. Lors de la mise à jour, l’ancienne valeur de 60 secondes devient 5 minutes ; une autre période personnalisée et le délai de mesure sont conservés.
 
 Les points du graphique restent en mémoire et leur nombre est borné. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
+
+<a id="cadre"></a>
 
 ## 🪟 Cadre de la fenêtre
 
