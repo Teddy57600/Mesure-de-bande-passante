@@ -1,6 +1,33 @@
-# MiniDébit
+<div align="center">
 
-Petit widget Windows de surveillance du trafic réseau, inspiré de la capture fournie : graphique en temps réel, réception et envoi affichés séparément, fenêtre déplaçable et redimensionnable.
+<img src="docs/banner.svg" alt="MiniDébit — Votre réseau, en un coup d’œil." width="100%" />
+
+<p><strong>Un widget discret pour suivre votre trafic réseau en temps réel.</strong><br />
+Un graphique lisible, des valeurs stables et une apparence à votre mesure.</p>
+
+<p>
+<img src="https://img.shields.io/badge/version-1.2.3-0078FF?style=flat-square" alt="Version 1.2.3" />
+<img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0F6CBD?style=flat-square" alt="Windows 10 et 11" />
+<img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square" alt=".NET 10" />
+<img src="https://img.shields.io/badge/historique-SQLite-FF7909?style=flat-square" alt="Historique SQLite" />
+</p>
+
+<p><a href="#demarrage">Démarrer</a> · <a href="#utilisation">Utiliser</a> · <a href="#reglages">Personnaliser</a> · <a href="#historique">Historique</a> · <a href="#developpement">Compiler</a></p>
+
+</div>
+
+## ✨ À découvrir
+
+| | MiniDébit au quotidien |
+|---|---|
+| 📈 **Trafic en direct** | Courbes de réception et d’envoi, maximum et moyenne sur la période affichée. |
+| 🫧 **Valeurs plus calmes** | Lissage adaptatif : stable sous 1 Mo/s, réactif au-dessus. |
+| 🎨 **Votre apparence** | Couleurs, polices, grille, cadre, marges et bandeau compact. |
+| 🪟 **Une présence discrète** | En-tête au survol, zone de notification et accrochage aux bords de l’écran. |
+| 🗃️ **Des données conservées** | Chaque mesure enregistrée dans SQLite ; export CSV du graphique. |
+| ⚙️ **Des réglages indépendants** | Fréquence des mesures, période du graphique et lissage configurés séparément. |
+
+## 🖼️ Aperçu
 
 Les captures suivantes utilisent des données de démonstration. Le widget réel affiche le trafic mesuré sur la carte sélectionnée.
 
@@ -10,7 +37,13 @@ Au survol :
 
 ![Widget survolé](docs/widget-modern-hover.png)
 
-## Lancer
+<a id="demarrage"></a>
+
+## 🚀 Démarrage rapide
+
+1. Ouvrir **Lancer.cmd** depuis le projet, ou **MiniDebit.exe** depuis le dossier de distribution.
+2. Le widget apparaît directement ; choisir la carte réseau dans les paramètres si nécessaire.
+3. Faire un clic droit ou un double-clic sur le widget pour le personnaliser.
 
 Double-cliquer sur **Lancer.cmd**, ou sur **dist\MiniDebit\MiniDebit.exe**. Garder les fichiers du dossier `dist\MiniDebit` ensemble.
 
@@ -20,7 +53,9 @@ L’application utilise **C# / WinForms et .NET 10 Desktop**. Ce runtime est dé
 
 La distribution inclut le programme, ses fichiers .NET et ce guide ; elle n’embarque pas le runtime afin de garder le téléchargement et le dossier très petits.
 
-## Utilisation
+<a id="utilisation"></a>
+
+## 🖱️ Utilisation
 
 - **Glisser la fenêtre** pour la déplacer ; tirer son coin inférieur droit pour la redimensionner.
 - Pendant le déplacement, le widget **accroche aux quatre bords** à environ 8 px (adaptés à la mise à l’échelle Windows). Éloigner la souris du bord le détache, même en déplaçant lentement la souris. Le point de prise initial reste la référence pendant tout le déplacement. Le widget reste dans la zone utilisable du moniteur sous le pointeur, au-dessus d’une barre des tâches en bas ou à côté d’une barre latérale. Déplacer le pointeur sur un autre écran pour y faire passer le widget. **Général → Déplacement → Accrocher aux bords de l’écran**, activé par défaut, permet de désactiver ce comportement. La position est mémorisée à la fin du déplacement.
@@ -47,7 +82,21 @@ La recherche HTTPS utilise le service [ipify](https://www.ipify.org), en arrièr
 
 Si la carte est hors ligne, sans IPv4 ou sans accès à ce service, le nom reste affiché seul. Le mode cumul de plusieurs cartes ne présente pas une adresse publique unique. Les débits, le graphique et SQLite continuent de fonctionner indépendamment de la recherche ; l’adresse publique n’est pas enregistrée dans la base.
 
-## Réglages
+<a id="reglages"></a>
+
+## 🎛️ Réglages et apparence
+
+| Onglet | Ce que vous pouvez régler |
+|---|---|
+| **Général** | Carte réseau, actualisation, période, unités, thème, opacité et comportement de la fenêtre. |
+| **Graphique** | Couleurs, traits, remplissage, grille, marges et repères Max / Moyenne. |
+| **Débits** | Police, couleurs, bandeau compact et lissage adaptatif. |
+| **Historique** | Enregistrement SQLite et durée de conservation. |
+| **Cadre** | Visibilité, couleur, épaisseur et style de la bordure. |
+| **Texte Max** | Police des pastilles et couleur du texte du maximum. |
+
+<details>
+<summary><strong>Voir les captures et les détails des réglages</strong></summary>
 
 ![Paramètres](docs/settings.png)
 
@@ -55,7 +104,7 @@ L’onglet **Général** regroupe les paramètres de mesure et du widget. L’on
 
 ![Apparence du graphique](docs/settings-graph.png)
 
-**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **3 px par défaut** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. La marge s’ajoute à la place nécessaire aux axes et aux angles arrondis. À zéro, le cadre reste visible s’il est activé ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
+**Graphique → Marge du graphique (px)** règle l’espace autour du graphique, de **0 à 20 px**, avec **1 px dans le profil livré** pour gagner de la surface d’affichage. Le réglage s’applique aux quatre côtés, avec ou sans survol, et l’aperçu réagit immédiatement. La marge s’ajoute à la place nécessaire aux axes et aux angles arrondis. À zéro, le cadre reste visible s’il est activé ; dans un petit widget, les marges verticales sont limitées si nécessaire pour conserver un graphique lisible. La valeur est mémorisée avec les autres paramètres et suit la mise à l’échelle Windows.
 
 Le **maximum observé sur la période visible** apparaît dans une pastille au-dessus du graphique, avec une ligne horizontale en tirets. Sa couleur correspond à la courbe qui a produit ce pic. Réception et envoi sont comparés sans être additionnés. **Graphique → Repères de la période → Maximum** masque ou affiche la pastille et la ligne. Un maximum hors échelle reste lisible dans la pastille ; sa ligne est masquée.
 
@@ -73,16 +122,19 @@ L’onglet **Débits** configure le bandeau inférieur : couleur du fond, police
 
 ![Apparence du bandeau des débits](docs/settings-rates.png)
 
-Dans **Débits → Bandeau compact**, cocher **Réduire les marges verticales** pour resserrer le bandeau, en conservant les valeurs et les libellés. Sa hauteur s’adapte à la police choisie ; l’espace libéré revient au graphique. L’aperçu reflète cette hauteur et l’option est mémorisée après enregistrement. Le mode standard reste sélectionné par défaut.
+Dans **Débits → Bandeau compact**, cocher **Réduire les marges verticales** pour resserrer le bandeau, en conservant les valeurs et les libellés. Sa hauteur s’adapte à la police choisie ; l’espace libéré revient au graphique. L’aperçu reflète cette hauteur et l’option est mémorisée après enregistrement. Le mode compact est sélectionné dans le profil livré.
+
+</details>
 
 | Réglage | Valeurs |
 |---|---|
 | Carte réseau | Automatique, carte précise ou cumul des cartes actives |
 | Actualisation | 250 à 5 000 ms ; 1 000 ms par défaut |
-| Période affichée | 0,25 à 60 minutes (15 secondes à 1 heure) ; 5 minutes par défaut |
+| Période affichée | 0,25 à 60 minutes (15 secondes à 1 heure) ; 3 minutes dans le profil livré |
 | Unités | Octets/s (Ko/s, Mo/s) ou bits/s (Mbit/s, Gbit/s) |
 | Apparence | Sombre ou claire |
-| Opacité | 35 à 100 % |
+| Opacité | 35 à 100 % ; 90 % dans le profil livré |
+| Lissage des valeurs | Désactivé, Léger, Modéré ou Fort ; Léger par défaut |
 | Échelle verticale | Automatique, ou plafond fixe en Mbit/s |
 | Premier plan | Activé ou désactivé |
 | Au lancement | Widget visible ou uniquement icône près de l’horloge |
@@ -97,15 +149,17 @@ La **période affichée** règle la vitesse du défilement, indépendamment de l
 
 Les points du graphique restent en mémoire et leur nombre est borné. Le CSV contient uniquement la période encore affichée, avec horodatage et débits en octets/s. Il ne contient pas le contenu des paquets.
 
-## Cadre de la fenêtre
+## 🪟 Cadre de la fenêtre
 
-L’onglet **Cadre** permet d’afficher ou de masquer la bordure autour de toute la fenêtre, de choisir sa couleur, son épaisseur (**0,5 à 8 px**) et son style (**continu, pointillé ou tirets**). Par défaut, le cadre est continu, épais de 1 px, avec une couleur qui suit le thème clair ou sombre. L’épaisseur suit la mise à l’échelle Windows et réserve sa place autour du graphique et du bandeau des débits. Le cadre reste visible hors survol.
+L’onglet **Cadre** permet d’afficher ou de masquer la bordure autour de toute la fenêtre, de choisir sa couleur, son épaisseur (**0,5 à 8 px**) et son style (**continu, pointillé ou tirets**). Le profil livré utilise un cadre continu de 1 px, couleur `#DFE8F2`. L’option de couleur automatique permet de suivre le thème. L’épaisseur suit la mise à l’échelle Windows et réserve sa place autour du graphique et du bandeau des débits. Le cadre reste visible hors survol.
 
 ![Paramètres du cadre](docs/settings-frame.png)
 
 L’aperçu réagit aux réglages ; **Enregistrer** applique et mémorise le cadre, **Annuler** conserve le cadre actuel. **Rétablir le cadre par défaut** ne change que ces paramètres, après enregistrement.
 
-## Historique SQLite
+<a id="historique"></a>
+
+## 🗃️ Historique SQLite
 
 L’onglet **Historique** permet d’activer l’enregistrement de **chaque mesure**, au délai d’actualisation configuré, et de choisir une conservation de **1 à 90 jours**, avec **7 jours par défaut**. L’enregistrement est activé par défaut. Il continue lorsque le widget est masqué.
 
@@ -121,7 +175,9 @@ La purge des anciennes mesures intervient lors d’une écriture, chaque jour et
 
 Pour lancer MiniDébit à l’ouverture de session Windows, placer un raccourci vers l’exécutable dans le dossier ouvert par **Win+R → shell:startup**. Conserver **Afficher le widget** coché pour le voir immédiatement ; décocher pour un lancement discret. Aucune entrée de démarrage n’est ajoutée automatiquement.
 
-## Compiler et vérifier
+<a id="developpement"></a>
+
+## 🛠️ Compiler et vérifier
 
 Depuis PowerShell, dans ce dossier :
 

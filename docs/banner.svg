@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+  <title id="title">MiniDébit</title>
+  <desc id="desc">Votre réseau, en un coup d’œil. Widget Windows de surveillance du trafic réseau.</desc>
+  <defs>
+    <linearGradient id="background" x2="1" y2="1"><stop stop-color="#101c30"/><stop offset="1" stop-color="#162f4d"/></linearGradient>
+    <linearGradient id="blue"><stop stop-color="#45cce6"/><stop offset="1" stop-color="#0078ff"/></linearGradient>
+    <linearGradient id="orange" x2="0" y2="1"><stop stop-color="#ffb469"/><stop offset="1" stop-color="#ff7909"/></linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#91b6e4" stroke-opacity=".07"/></pattern>
+  </defs>
+  <rect width="1200" height="280" rx="26" fill="url(#background)"/>
+  <rect width="1200" height="280" rx="26" fill="url(#grid)"/>
+  <circle cx="1060" cy="70" r="130" fill="#0078ff" opacity=".08"/>
+  <circle cx="1170" cy="250" r="130" fill="#ff7909" opacity=".06"/>
+  <rect x="46" y="68" width="140" height="140" rx="34" fill="#0c1728" stroke="#5c91c2" stroke-opacity=".35"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="11">
+    <path d="M91 102V165M71 146L91 166L111 146" stroke="url(#blue)"/>
+    <path d="M143 174V111M123 130L143 110L163 130" stroke="url(#orange)"/>
+  </g>
+  <text x="222" y="130" fill="#f5f9ff" font-family="Segoe UI,Arial,sans-serif" font-size="64" font-weight="700" letter-spacing="-2">MiniDébit</text>
+  <text x="226" y="176" fill="#aec5df" font-family="Segoe UI,Arial,sans-serif" font-size="25">Votre réseau, en un coup d’œil.</text>
+  <rect x="226" y="198" width="200" height="27" rx="13" fill="#263e5b"/>
+  <text x="326" y="217" fill="#b9d5f5" font-family="Segoe UI,Arial,sans-serif" font-size="13" font-weight="600" text-anchor="middle" letter-spacing="1">WIDGET POUR WINDOWS</text>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+    <path d="M727 195H825L840 169L850 195H880L896 103L909 195H958L974 149L986 195H1015L1033 69L1048 195H1149" stroke="url(#blue)"/>
+    <path d="M727 207H847L862 188L878 207H920L939 173L956 207H1006L1025 148L1041 207H1080L1094 127L1109 207H1149" stroke="url(#orange)" opacity=".9"/>
+  </g>
+  <path d="M727 232H1149" stroke="#91b6e4" stroke-opacity=".2"/>
+</svg>
