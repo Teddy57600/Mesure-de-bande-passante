@@ -9,6 +9,7 @@ public sealed class RateAppearance
     public double FontSizePixels { get; set; } = 18;
     public int Style { get; set; } = (int)FontStyle.Bold;
     public bool Compact { get; set; }
+    public int SmoothingLevel { get; set; } = 1;
 
     public void Normalize()
     {
@@ -17,6 +18,7 @@ public sealed class RateAppearance
         FontFamily = string.IsNullOrWhiteSpace(FontFamily) ? "Segoe UI" : FontFamily.Trim();
         FontSizePixels = double.IsFinite(FontSizePixels) ? Math.Clamp(FontSizePixels, 8, 24) : 18;
         Style &= 15;
+        SmoothingLevel = Math.Clamp(SmoothingLevel, 0, 3);
     }
 
     public Color Background(GraphAppearance graph, bool dark) => GraphAppearance.Resolve(BackgroundColor, graph.Background(dark));

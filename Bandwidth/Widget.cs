@@ -10,6 +10,8 @@ public sealed class Widget : Form
     private readonly Settings settings;
     private readonly bool diagnostic;
     private readonly NetworkMonitor monitor = new();
+    private readonly RateSmoother displayedRates = new();
+    private string displayedAdapter = "";
     private readonly PublicIpv4 publicIpv4 = new();
     private readonly WindowDrag drag = new();
     private readonly HistoryRecorder recorder;
@@ -115,6 +117,8 @@ public sealed class Widget : Form
     private void ApplySettings()
     {
         settings.Normalize();
+        if (displayedRates.Level != settings.Rates.SmoothingLevel)
+            displayedRates.Update(current, settings.Rates.SmoothingLevel, monitor.ActiveAdapterKey.Length > 0);
         publicIpv4.Update(monitor.PublicIpv4Target, settings.ShowPublicIpv4);
         recorder.Configure(settings.Storage);
         var numbers = settings.Rates.CreateFont();
@@ -132,6 +136,9 @@ public sealed class Widget : Form
     private void Tick()
     {
         current = monitor.Poll(settings.AdapterId);
+        if (displayedAdapter != monitor.ActiveAdapterKey) displayedRates.Reset();
+        displayedAdapter = monitor.ActiveAdapterKey;
+        displayedRates.Update(current, settings.Rates.SmoothingLevel, displayedAdapter.Length > 0);
         publicIpv4.Update(monitor.PublicIpv4Target, settings.ShowPublicIpv4);
         recorder.Record(current, monitor.ActiveAdapterKey, monitor.Status, settings.IntervalMs);
         SampleCount++;
@@ -194,6 +201,8 @@ public sealed class Widget : Form
             history.Enqueue(new Sample(now.AddSeconds((i - 120) * settings.HistorySeconds / 120.0), down, up, settings.HistorySeconds / 120.0));
         }
         current = history.Last();
+        displayedRates.Reset();
+        displayedRates.Update(current, settings.Rates.SmoothingLevel, true);
         visiblePeak = TrafficPeak.InWindow(history, now, settings.HistorySeconds);
         visibleAverage = TrafficAverage.InWindow(history, now, settings.HistorySeconds);
         scale = 500000;
@@ -229,16 +238,16 @@ public sealed class Widget : Form
         DashboardRenderer.Statistics(g, new RectangleF(margin + 24, headerHeight + inset + 8, w - 2 * margin - 24, statisticsHeight),
             settings.Graph, settings.Dark, visiblePeak, visibleAverage, settings.Bits);
         float chartTop = headerHeight + inset + statisticsHeight + 16;
-        float axisWidth = Math.Max(28, g.MeasureString(Units.Rate(scale, settings.Bits).Split(' ')[0], smallFont).Width + 8);
-        var chart = new RectangleF(margin + axisWidth, chartTop, w - 2 * margin - axisWidth,
+        float chartLeft = inset + settings.Graph.MarginPixels + 3 + DashboardRenderer.AxisWidth(g, scale, settings.Bits, smallFont);
+        var chart = new RectangleF(chartLeft, chartTop, w - margin - chartLeft,
             Math.Max(1, h - chartTop - rateHeight - inset - 12 - verticalMargin));
         GraphRenderer.Backdrop(g, chart, settings.Graph, settings.Dark);
         DrawSeries(g, chart, false, UpColor);
         DrawSeries(g, chart, true, DownColor);
         DashboardRenderer.Guides(g, chart, settings.Graph, visiblePeak, visibleAverage, scale);
         DashboardRenderer.Axes(g, chart, scale, settings.Bits, Muted, smallFont);
-        RateRenderer.Draw(g, new RectangleF(inset, h - rateHeight - inset, w - 2 * inset, rateHeight), Units.Rate(current.Down, settings.Bits),
-            Units.Rate(current.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
+        RateRenderer.Draw(g, new RectangleF(inset, h - rateHeight - inset, w - 2 * inset, rateHeight), Units.Rate(displayedRates.Down, settings.Bits),
+            Units.Rate(displayedRates.Up, settings.Bits), settings.Rates, settings.Graph, settings.Dark, rateFont, labelFont, arrowFont);
         if (HeaderVisible)
         {
             using var grip = new Pen(Muted, 1);
@@ -435,7 +444,7 @@ public sealed class Widget : Form
     }
 
     private void ToggleVisibility() { if (Visible) Hide(); else { Show(); Activate(); } }
-    private void ResetMeasurements() { monitor.Reset(); history.Clear(); current = default; Tick(); }
+    private void ResetMeasurements() { monitor.Reset(); displayedRates.Reset(); history.Clear(); current = default; Tick(); }
 
     private void OpenSettings()
     {

@@ -1,0 +1,58 @@
+{
+  "ConfigurationVersion": 1,
+  "AdapterId": "auto",
+  "IntervalMs": 1000,
+  "HistorySeconds": 180,
+  "Bits": false,
+  "Dark": false,
+  "AlwaysOnTop": true,
+  "StartHidden": false,
+  "SnapToEdges": true,
+  "ShowPublicIpv4": true,
+  "OpacityPercent": 90,
+  "FixedScaleMbps": 0,
+  "Graph": {
+    "DownColor": "#0078FF",
+    "UpColor": "#FF7909",
+    "BackgroundColor": "",
+    "GridColor": "",
+    "LineWidth": 1.4,
+    "LineStyle": 0,
+    "ShowGrid": true,
+    "GridStyle": 2,
+    "FillArea": true,
+    "FillOpacityPercent": 14,
+    "ShowMaximum": true,
+    "ShowAverage": true,
+    "MarginPixels": 1,
+    "MaximumText": {
+      "FontFamily": "Segoe UI",
+      "FontSizePixels": 11,
+      "Style": 1,
+      "ColorHex": ""
+    }
+  },
+  "Rates": {
+    "BackgroundColor": "",
+    "TextColor": "",
+    "FontFamily": "Segoe UI",
+    "FontSizePixels": 16,
+    "Style": 1,
+    "Compact": true,
+    "SmoothingLevel": 1
+  },
+  "Frame": {
+    "Enabled": true,
+    "ColorHex": "#DFE8F2",
+    "WidthPixels": 1,
+    "Style": 0
+  },
+  "Storage": {
+    "Enabled": true,
+    "RetentionDays": 7
+  },
+  "Width": 322,
+  "Height": 174,
+  "X": null,
+  "Y": null
+}

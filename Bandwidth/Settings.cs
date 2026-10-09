@@ -55,12 +55,21 @@ public sealed class Settings
     {
         try
         {
-            var result = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path ?? FilePath)) ?? new Settings();
+            var result = JsonSerializer.Deserialize<Settings>(File.ReadAllText(path ?? FilePath)) ?? CreateDefaults();
             result.Normalize();
             return result;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
-        { return new Settings(); }
+        { return CreateDefaults(); }
+    }
+
+    public static Settings CreateDefaults()
+    {
+        using var profile = typeof(Settings).Assembly.GetManifestResourceStream("MiniDebit.DefaultSettings")
+            ?? throw new InvalidOperationException("Profil par défaut MiniDébit introuvable.");
+        var result = JsonSerializer.Deserialize<Settings>(profile) ?? new Settings();
+        result.Normalize();
+        return result;
     }
 
     public void Save(string? path = null)

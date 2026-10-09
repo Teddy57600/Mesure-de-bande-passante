@@ -135,7 +135,7 @@ public sealed class SettingsForm : Form
         graph.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 380), AutoSize = true });
         var preview = new GraphPreview(ReadAppearance, () => theme.SelectedIndex == 0) { Location = new Point(12, 404), Size = new Size(476, 70) };
         graph.Controls.Add(preview);
-        var rateTable = Table(ratePage, 4, 40);
+        var rateTable = Table(ratePage, 5, 40);
         var rateBackground = new ColorField(settings.Rates.BackgroundColor, settings.Rates.Background(settings.Graph, settings.Dark), true, "Fond graphique");
         var rateText = new ColorField(settings.Rates.TextColor, settings.Rates.Text(settings.Graph, settings.Dark), true, "Auto (contraste)");
         var draftFont = new RateAppearance { FontFamily = settings.Rates.FontFamily, FontSizePixels = settings.Rates.FontSizePixels, Style = settings.Rates.Style };
@@ -145,18 +145,22 @@ public sealed class SettingsForm : Form
         Row(rateTable, 2, "Police des débits", chooseFont);
         var compact = new CheckBox { Text = "Réduire les marges verticales", Checked = settings.Rates.Compact, Dock = DockStyle.Fill };
         Row(rateTable, 3, "Bandeau compact", compact);
-        var fontDescription = new Label { Location = new Point(12, 187), Size = new Size(476, 30) };
+        var smoothing = Choice("Désactivé", "Léger", "Modéré", "Fort");
+        smoothing.SelectedIndex = settings.Rates.SmoothingLevel;
+        Row(rateTable, 4, "Lissage des valeurs", smoothing);
+        var fontDescription = new Label { Location = new Point(12, 227), Size = new Size(476, 30) };
         ratePage.Controls.Add(fontDescription);
-        ratePage.Controls.Add(new Label { Location = new Point(12, 232), Size = new Size(476, 62), ForeColor = Color.FromArgb(94, 115, 141),
-            Text = "« Fond graphique » reprend automatiquement la couleur du graphique.\nLa police s’applique aux valeurs et aux libellés Réception / Envoi.\nLes flèches gardent les couleurs de leurs courbes." });
+        ratePage.Controls.Add(new Label { Location = new Point(12, 272), Size = new Size(476, 80), ForeColor = Color.FromArgb(94, 115, 141),
+            Text = "« Fond graphique » reprend automatiquement la couleur du graphique.\nLa police s’applique aux valeurs et aux libellés Réception / Envoi.\nLissage : valeurs stables sous 1 Mo/s, plus réactives au-dessus.\nRéception et envoi séparés. Les mesures restent inchangées." });
         RateAppearance ReadRates() => new()
         {
             BackgroundColor = rateBackground.Value, TextColor = rateText.Value,
-            FontFamily = draftFont.FontFamily, FontSizePixels = draftFont.FontSizePixels, Style = draftFont.Style, Compact = compact.Checked
+            FontFamily = draftFont.FontFamily, FontSizePixels = draftFont.FontSizePixels, Style = draftFont.Style, Compact = compact.Checked,
+            SmoothingLevel = smoothing.SelectedIndex
         };
-        ratePage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 313), AutoSize = true });
+        ratePage.Controls.Add(new Label { Text = "Aperçu · données d’exemple", Location = new Point(12, 366), AutoSize = true });
         var ratePreview = new RatePreview(ReadRates, ReadAppearance, () => theme.SelectedIndex == 0)
-            { Location = new Point(12, 339), Size = new Size(476, 48) };
+            { Location = new Point(12, 392), Size = new Size(476, 48) };
         ratePage.Controls.Add(ratePreview);
         var frameTable = Table(framePage, 4, 40);
         var frameEnabled = new CheckBox { Text = "Afficher le cadre", Checked = settings.Frame.Enabled, Dock = DockStyle.Fill };
@@ -217,12 +221,13 @@ public sealed class SettingsForm : Form
             draftFont.Normalize();
             RefreshRates();
         };
-        var resetRates = new Button { Text = "Rétablir le bandeau par défaut", Location = new Point(12, 430), Size = new Size(256, 30) };
+        var resetRates = new Button { Text = "Rétablir le bandeau par défaut", Location = new Point(12, 470), Size = new Size(256, 30) };
         ratePage.Controls.Add(resetRates);
         resetRates.Click += (_, _) =>
         {
             draftFont = new RateAppearance();
             compact.Checked = false;
+            smoothing.SelectedIndex = 1;
             rateBackground.Value = ""; rateText.Value = "";
             RefreshRates();
         };

@@ -8,6 +8,37 @@ void Check(bool condition, string description)
     Console.WriteLine($"OK {++count:00} — {description}");
 }
 var now = DateTimeOffset.Now;
+var smooth = new RateSmoother();
+smooth.Update(new(now, 100, 50, 1), 1, true);
+Check(smooth.Down == 100 && smooth.Up == 50, "Le premier débit affiché ne part pas artificiellement de zéro");
+smooth.Update(new(now, 110, 55, 1), 1, true);
+Check(smooth.Down > 100 && smooth.Down < 110 && smooth.Up > 50 && smooth.Up < 55,
+    "Le lissage léger atténue les petites variations des deux débits");
+var fastRefresh = new RateSmoother(); fastRefresh.Update(new(now, 100, 50, 1), 1, true);
+for (int i = 0; i < 4; i++) fastRefresh.Update(new(now, 110, 55, .25), 1, true);
+Check(Math.Abs(fastRefresh.Down - smooth.Down) < .000001,
+    "Le lissage suit le temps réel : quatre mesures de 250 ms équivalent à une seconde");
+var strong = new RateSmoother(); strong.Update(new(now, 100, 50, 1), 3, true);
+strong.Update(new(now, 110, 55, 1), 3, true);
+Check(strong.Down < smooth.Down, "Le niveau fort stabilise davantage les petites transitions");
+strong.Update(new(now, 1000, 500, 1), 3, true);
+Check(strong.Down < 300 && strong.Up < 150, "Les sauts relatifs à faible débit ne court-circuitent plus le lissage fort");
+var adaptive = new RateSmoother(); adaptive.Update(new(now, 2_000_000, 100_000, 1), 3, true);
+adaptive.Update(new(now, 4_000_000, 200_000, 1), 3, true);
+Check(adaptive.Down > 3_400_000 && adaptive.Up < 110_000,
+    "Au-dessus de 1 Mo/s la réception réagit vite, sans accélérer un envoi faible");
+adaptive.Update(new(now, 0, 200_000, 1), 3, true);
+Check(adaptive.Down < 1_000_000, "La fin d’un gros transfert revient rapidement sous 1 Mo/s");
+var highFast = new RateSmoother(); highFast.Update(new(now, 2_000_000, 100_000, 1), 3, true);
+for (int i = 0; i < 4; i++) highFast.Update(new(now, 4_000_000, 200_000, .25), 3, true);
+Check(Math.Abs(highFast.Down - (2_000_000 + (1 - Math.Exp(-1 / .75)) * 2_000_000)) < .000001,
+    "La réactivité au-dessus du seuil reste indépendante de la fréquence des relevés");
+strong.Update(new(now, 800, 400, 1), 0, true);
+Check(strong.Down == 800 && strong.Up == 400, "Désactiver restitue immédiatement les mesures exactes");
+strong.Update(new(now, 800, 400, 1), 1, false);
+Check(strong.Down == 0 && strong.Up == 0, "Une interface indisponible remet les deux valeurs immédiatement à zéro");
+strong.Update(new(now, 30, 10, 1), 1, true);
+Check(strong.Down == 30 && strong.Up == 10, "La reconnexion reprend sans reliquat de l’ancienne interface");
 var weightedAverage = TrafficAverage.InWindow([new(now.AddSeconds(-3), 100, 20, 1), new(now, 300, 60, 3)], now, 60);
 Check(weightedAverage.Down == 250 && weightedAverage.Up == 50 && weightedAverage.Seconds == 4,
     "La moyenne pondère les débits par la durée réelle des mesures");
@@ -221,6 +252,12 @@ Check(rateSaved.Rates.BackgroundColor == "#102030" && rateSaved.Rates.TextColor 
     "Le fond, la couleur du texte et la police sont mémorisés indépendamment des mesures");
 Check(rateSaved.Rates.Background(rateSaved.Graph, true).ToArgb() == System.Drawing.Color.FromArgb(16, 32, 48).ToArgb(),
     "Une couleur explicite du bandeau reste indépendante du graphique");
+rateSaved.Rates.SmoothingLevel = 3; rateSaved.Save(path);
+Check(Settings.Load(path).Rates.SmoothingLevel == 3 && Settings.CreateDefaults().Rates.SmoothingLevel == 1,
+    "Le niveau choisi est mémorisé, avec le lissage léger par défaut pour les nouvelles installations");
+File.WriteAllText(path, "{\"Rates\":{\"Compact\":true}}");
+Check(Settings.Load(path).Rates.SmoothingLevel == 1 && Settings.Load(path).Rates.Compact,
+    "Une ancienne configuration active le lissage léger sans perdre ses réglages du bandeau");
 var unavailableFont = new RateAppearance { FontFamily = "MiniDebit police absente 123456", FontSizePixels = 18 };
 using (var replacement = unavailableFont.CreateFont()) Check(replacement.Name == "Segoe UI", "Une police absente utilise Segoe UI");
 File.WriteAllText(path, "{\"Rates\":null}");
@@ -228,6 +265,15 @@ Check(Settings.Load(path).Rates is not null, "Une ancienne configuration reçoit
 File.WriteAllText(path, "{invalide");
 Check(Settings.Load(path).IntervalMs == 1000, "Un fichier JSON corrompu restaure les valeurs par défaut");
 Check(Settings.Load(Path.Combine(directory, "absent.json")).AdapterId == "auto", "Première ouverture sans configuration");
+var firstInstall = Settings.Load(Path.Combine(directory, "absent.json"));
+Check(firstInstall.HistorySeconds == 180 && firstInstall.IntervalMs == 1000 && firstInstall.OpacityPercent == 90 &&
+    firstInstall.Width == 322 && firstInstall.Height == 174 && firstInstall.Rates.Compact && firstInstall.Rates.FontSizePixels == 16 &&
+    firstInstall.Graph.MaximumText.FontSizePixels == 11 && firstInstall.Graph.MarginPixels == 1 &&
+    firstInstall.X is null && firstInstall.Y is null,
+    "Une nouvelle installation utilise le profil capturé, sans position ni carte propres à ce PC");
+firstInstall.Graph.DownColor = "#112233";
+Check(Settings.CreateDefaults().Graph.DownColor == "#0078FF",
+    "Modifier une configuration ne modifie pas le profil intégré des futures installations");
 var monitor = new NetworkMonitor();
 var live = monitor.Poll("auto");
 Check(live.Down >= 0 && live.Up >= 0 && !string.IsNullOrEmpty(monitor.Status), "Lecture des interfaces Windows réelles");

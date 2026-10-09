@@ -57,21 +57,33 @@ internal static class DashboardRenderer
         }
     }
 
+    private static string[] AxisLabels(double scale, bool bits, int ticks)
+    {
+        double maximum = scale * (bits ? 8 : 1);
+        int unit = 0;
+        while (maximum >= 1000 && unit < 4) { maximum /= 1000; unit++; }
+        return Enumerable.Range(0, ticks + 1).Select(i =>
+            (maximum * (ticks - i) / ticks).ToString("0.#", CultureInfo.CurrentCulture)).ToArray();
+    }
+
+    public static float AxisWidth(Graphics g, double scale, bool bits, Font font)
+    {
+        using var format = new StringFormat(StringFormat.GenericTypographic);
+        // Measure every tick: intermediate decimal values can exceed the top label.
+        return (float)Math.Ceiling(AxisLabels(scale, bits, 4).Max(label =>
+            g.MeasureString(label, font, int.MaxValue, format).Width)) + 3;
+    }
+
     public static void Axes(Graphics g, RectangleF chart, double scale, bool bits, Color muted, Font font)
     {
-        // One common unit keeps all five ticks directly comparable.
-        double factor = bits ? 8 : 1;
-        double maximum = scale * factor;
-        string[] units = bits ? ["bit/s", "kbit/s", "Mbit/s", "Gbit/s", "Tbit/s"] : ["o/s", "Ko/s", "Mo/s", "Go/s", "To/s"];
-        int unit = 0;
-        while (maximum >= 1000 && unit < units.Length - 1) { maximum /= 1000; unit++; }
         using var brush = new SolidBrush(muted);
-        using var format = new StringFormat { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
+        using var format = new StringFormat(StringFormat.GenericTypographic)
+        { Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center };
         int ticks = chart.Height < 65 ? 2 : 4;
+        var labels = AxisLabels(scale, bits, ticks);
         for (int i = 0; i <= ticks; i++)
         {
-            string value = (maximum * (ticks - i) / ticks).ToString("0.#", CultureInfo.CurrentCulture);
-            g.DrawString(value, font, brush, new RectangleF(0, chart.Top + chart.Height * i / ticks - 8, chart.Left - 7, 16), format);
+            g.DrawString(labels[i], font, brush, new RectangleF(0, chart.Top + chart.Height * i / ticks - 8, chart.Left - 3, 16), format);
         }
         using var axis = new Pen(Color.FromArgb(110, muted), .7f);
         g.DrawLine(axis, chart.Left, chart.Top, chart.Left, chart.Bottom);

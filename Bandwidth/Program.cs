@@ -22,8 +22,8 @@ internal static class Program
         var report = Argument(args, "--smoke-report");
         if (captureSettings is not null || captureGraphSettings is not null || captureRateSettings is not null || captureHistorySettings is not null || captureFrameSettings is not null || captureMaximumSettings is not null)
         {
-            var captureConfiguration = diagnosticSettings is null ? new Settings() : Settings.Load(diagnosticSettings);
-            captureConfiguration.Rates.Compact = args.Contains("--compact");
+            var captureConfiguration = diagnosticSettings is null ? Settings.CreateDefaults() : Settings.Load(diagnosticSettings);
+            if (args.Contains("--compact")) captureConfiguration.Rates.Compact = true;
             using var dialog = new SettingsForm(captureConfiguration, SystemIcons.Application);
             if (captureGraphSettings is not null) dialog.SelectGraphTab();
             if (captureRateSettings is not null) dialog.SelectRatesTab();
@@ -52,11 +52,11 @@ internal static class Program
             return 0;
         }
         bool diagnostic = capture is not null || captureHover is not null || report is not null;
-        var settings = diagnostic ? diagnosticSettings is null ? new Settings() : Settings.Load(diagnosticSettings) : Settings.Load();
+        var settings = diagnostic ? diagnosticSettings is null ? Settings.CreateDefaults() : Settings.Load(diagnosticSettings) : Settings.Load();
         if (diagnostic)
         {
             settings.AlwaysOnTop = false;
-            settings.Rates.Compact = args.Contains("--compact");
+            if (args.Contains("--compact")) settings.Rates.Compact = true;
             settings.Storage.Enabled = historyPath is not null;
         }
         using var window = new Widget(settings, diagnostic, diagnostic ? historyPath : null);
